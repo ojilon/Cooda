@@ -23,30 +23,49 @@
 
 package com.eup.codeopsstudio.logger;
 
-import com.eup.codeopsstudio.IdeApplication;
-import com.eup.codeopsstudio.R;
-
 /**
- * @author Etido Peter
+ * Enum representing the different log levels used throughout CodeOps Studio.
+ * <p>
+ * Each level has an associated capitalized string representation
+ * used for display in the UI and log output.
+ * <p>
+ * Functional style: Use {@link #valueOfLevel(String)} to look up a level
+ * by its string name, or iterate {@link #values()} for all levels.
  */
 public enum LogLevel {
-  WARN(IdeApplication.getInstance().getString(R.string.warning).toUpperCase()),
-  INFO(IdeApplication.getInstance().getString(R.string.info).toUpperCase()),
-  DEBUG(IdeApplication.getInstance().getString(R.string.debug).toUpperCase()),
-  ERROR(IdeApplication.getInstance().getString(R.string.error).toUpperCase());
 
-  public final String level;
+  WARN("WARNING"),
+  INFO("INFO"),
+  DEBUG("DEBUG"),
+  ERROR("ERROR");
+
+  /** The display string for this log level. */
+  private final String level;
 
   LogLevel(String level) {
-    this.level = "[" + level + "]";
+	this.level = level;
   }
 
-  public static String getLevel(LogLevel level) {
-    for (LogLevel value : values()) {
-      if (value.level.equals(level.level)) {
-        return value.level;
-      }
-    }
-    return "INVALID-LOG-LEVEL";
+  /** Get the display string for this log level. */
+  public String getLevel() {
+	return level;
+  }
+
+  /**
+   * Look up a LogLevel by its display string.
+   * <p>
+   * Functional approach: returns the matching level or {@code null} if not found.
+   * Use this instead of the old iterative {@code getLevel()} method.
+   *
+   * @param level the log level string (e.g., "DEBUG", "ERROR")
+   * @return the matching LogLevel, or {@code null} if not found
+   */
+  public static LogLevel valueOfLevel(String level) {
+	for (LogLevel logLevel : values()) {
+	  if (logLevel.level.equals(level)) {
+		return logLevel;
+	  }
+	}
+	return null;
   }
 }

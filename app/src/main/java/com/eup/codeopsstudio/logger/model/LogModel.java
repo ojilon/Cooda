@@ -23,132 +23,113 @@
 
 package com.eup.codeopsstudio.logger.model;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+/**
+ * Immutable data model representing a single log entry.
+ * <p>
+ * This record holds all the essential properties of a log message:
+ * icon, tag, log level, message, and timestamp.
+ * <p>
+ * Usage: Pass log parameters to the constructor or use the convenience
+ * factory methods. The record is immutable and can be used directly
+ * in functional pipelines, LiveData observations, or as a diff unit.
+ */
+public record LogModel(
 
-public class LogModel {
+    /** Optional icon resource ID for diagnostics */
+    int mIcon,
 
-    private static final List<UUID> generatedIds = new ArrayList<>();
-    private final int mIcon;
-    private final CharSequence mTag;
-    private final CharSequence mMessage;
-    private final CharSequence mDateFormat;
-    private final CharSequence mLogLevel;
-    private final UUID id;
+    /** Log tag (e.g., "MainActivity", "Network") */
+    String mTag,
 
-    /**
-     * Basic log
-     *
-     * @param message log message
-     */
-    public LogModel(CharSequence message) {
-        this(null, 0, null, null, message);
+    /** Log level (e.g., "DEBUG", "ERROR") */
+    String mLevel,
+
+    /** Date/time format string or null */
+    String mDateFormat,
+
+    /** The actual log message */
+    String mMessage
+
+) {
+
+    /** Generate a unique ID for this log entry. */
+    public UUID id() {
+        return UUID.randomUUID();
     }
 
-    /**
-     * Diagnostics log
-     *
-     * @param icon    diagnostics icon resource
-     * @param message diagnostics message
-     */
-    public LogModel(int icon, CharSequence message) {
-        this(null, icon, null, null, message);
+    /** Convenience constructor: basic log with just a message. */
+    public LogModel(String message) {
+        this(0, null, null, null, message);
     }
 
-    /**
-     * Normal log
-     *
-     * @param tag     log tag
-     * @param level   the log level
-     * @param message log message
-     */
-    public LogModel(CharSequence tag, CharSequence level, CharSequence message) {
-        this(null, 0, tag, level, message);
+    /** Convenience constructor: diagnostics log with icon and message. */
+    public LogModel(int icon, String message) {
+        this(icon, null, null, null, message);
     }
 
-    /**
-     * Debug log
-     *
-     * @param date    log date
-     * @param tag     log tag
-     * @param level   the log level
-     * @param message log message
-     */
-    public LogModel(CharSequence date, CharSequence tag, CharSequence level, CharSequence message) {
+    /** Convenience constructor: log with tag and level. */
+    public LogModel(String tag, String level, String message) {
+        this(null, tag, level, null, message);
+    }
+
+    /** Convenience constructor: log with date, tag, and level. */
+    public LogModel(String date, String tag, String level, String message) {
         this(date, 0, tag, level, message);
     }
 
-    /**
-     * Verbose log
-     *
-     * @param date    log date
-     * @param icon    log icon resource
-     * @param tag     log tag
-     * @param level   the log level
-     * @param message log message
-     */
-    public LogModel(CharSequence date, int icon, CharSequence tag, CharSequence level,
-        CharSequence message) {
+    /** Convenience constructor: log with date, icon, tag, level, and message. */
+    public LogModel(
+        String date,
+        int icon,
+        String tag,
+        String level,
+        String message
+    ) {
         mDateFormat = date;
-        mIcon       = icon;
-        mTag        = tag;
-        mLogLevel   = level;
-        mMessage    = message;
-        this.id     = generateUUID();
+        mIcon = icon;
+        mTag = tag;
+        mLogLevel = level != null ? level : "INFO";
+        mMessage = message;
+    }
+
+    /** Get the log icon resource ID. */
+    public int icon() {
+        return mIcon;
+    }
+
+    /** Get the log tag. */
+    public String tag() {
+        return mTag;
+    }
+
+    /** Get the log level string. */
+    public String level() {
+        return mLevel;
+    }
+
+    /** Get the date format string. */
+    public String dateFormat() {
+        return mDateFormat;
+    }
+
+    /** Get the log message. */
+    public String message() {
+        return mMessage;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mMessage, mTag, mDateFormat, mLogLevel);
+        return java.util.Objects.hash(mMessage, mTag, mDateFormat, mLevel);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LogModel log = (LogModel) o;
-        return Objects.equals(mMessage, log.getMessage()) && Objects.equals(mTag, log.getTag())
-            && Objects.equals(mDateFormat, log.getDateFormat())
-            && Objects.equals(mLogLevel, log.getLevel());
-    }
-
-    public CharSequence getTag() {
-        return mTag;
-    }
-
-    public CharSequence getMessage() {
-        return mMessage;
-    }
-
-    public CharSequence getDateFormat() {
-        return mDateFormat;
-    }
-
-    public CharSequence getLevel() {
-        return mLogLevel;
-    }
-
-    public UUID getID() {
-        return this.id;
-    }
-
-    public int getIcon() {
-        return mIcon;
-    }
-
-    protected UUID generateUUID() {
-        UUID generatedId = UUID.randomUUID();
-        if (isUniqueId(generatedId)) {
-            generatedIds.add(generatedId);
-            return generatedId;
-        } else {
-            return generateUUID();
-        }
-    }
-
-    private boolean isUniqueId(UUID id) {
-        return !generatedIds.contains(id);
+        LogModel that = (LogModel) o;
+        return java.util.Objects.equals(mMessage, that.message())
+            && java.util.Objects.equals(mTag, that.tag())
+            && java.util.Objects.equals(mDateFormat, that.dateFormat())
+            && java.util.Objects.equals(mLevel, that.level());
     }
 }

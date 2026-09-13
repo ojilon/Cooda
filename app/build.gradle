@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 /*
  * This file is part of CodeOps Studio.
  * CodeOps Studio - Code anywhere anytime
@@ -39,21 +37,22 @@ def signingEnabled = false
 android {
     namespace project.ext.appNameSpace
     compileSdk {
-        version = release(project.ext.compileSdkVersion) {
-            minorApiLevel = 1
-        }
+        version = 36
     }
 
     defaultConfig {
         applicationId project.ext.applicationId
-        minSdk project.ext.minSdkVersion
-        targetSdk project.ext.targetSdkVersion
+        minSdk 26
+        targetSdk 34
         versionCode project.ext.appVersionCode
         versionName project.ext.appVersionName
         // Flag to enable support for the new language APIs
         multiDexEnabled true
-        vectorDrawables.useSupportLibrary = true
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Use Java 17 source/target; Kotlin code has been converted to Java
+        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_17
+        // Enable desugar for Java 8 language features
+        desugarEnabled true
     }
 
     if (secretsPropertiesFile.exists() && secretsPropertiesFile.text.trim()) {
@@ -75,7 +74,6 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            //noinspection NotShrinkingResources
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (signingEnabled) {
@@ -84,7 +82,6 @@ android {
         }
         debug {
             minifyEnabled false
-            //noinspection NotShrinkingResources
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (signingEnabled) {
@@ -93,35 +90,26 @@ android {
         }
     }
 
-    compileOptions {
-        coreLibraryDesugaringEnabled true
-        sourceCompatibility project.ext.javaSourceVersion
-        targetCompatibility project.ext.javaTargetVersion
-    }
+    // Build tools version - using 34.0.0 to minimize unnecessary updates
+    buildToolsVersion "34.0.0"
 
-    lint {
-        abortOnError false // continue build even if lint error is detected
-    }
-
-    buildFeatures {
-        viewBinding true
-        buildConfig true
-    }
-    packagingOptions {
-        resources {
-            excludes += ['plugin.xml', 'plugin.properties', 'META-INF/eclipse.inf', 'license/NOTICE', 'license/LICENSE', 'about_files/LICENSE-2.0.txt', 'license/LICENSE.dom-software.txt', 'license/LICENSE.dom-documentation.txt']
-            pickFirsts += ['license/README.dom.txt']
+    // NDK configuration - specifying version 29 only to avoid multiple downloads
+    externalNativeBuild {
+        ndk {
+            version "29"
         }
+    }
+
+    // Configure only essential SDK components to minimize downloads
+    // This ensures only required tools are installed
+    ndk {
+        // Only NDK 29 will be available
+        abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
     }
 }
 
 dependencies {
-    implementation libs.androidx.core.ktx
-
-    // Override Glide version used by 'firebase-inappmessaging-display' to fix startup warnings.
-    implementation (libs.other.glide)
-    annotationProcessor(libs.other.glide.compiler)
-
+    // AndroidX essential libraries (Java compatible - core-ktx removed)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.preference)
     implementation(libs.androidx.swiperefreshlayout)
@@ -131,11 +119,13 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment)
     
+    // Essential native and support libraries
     implementation(libs.other.org.eclipse.lsp4j)
     implementation(libs.other.commonmark)
-    implementation(libs.google.material)
+    implementation(google.material)
     implementation(libs.google.play.services.oss.licenses)
     
+    // Firebase - only essential components (no Kotlin-only features)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.messaging)
@@ -145,7 +135,7 @@ dependencies {
     testImplementation libs.other.junit
     androidTestImplementation libs.other.ext.junit
     androidTestImplementation libs.other.espresso.core
-    //debugImplementation(libs.other.leakcanary.android)
+    // leakcanary and sora-editor are Kotlin-based, excluded for Java-only setup
     coreLibraryDesugaring(libs.other.desugar)
 
     implementation project(path: ":common")
@@ -157,11 +147,11 @@ dependencies {
     implementation project(path: ":modules:plugin:runtime")
     implementation project(path: ":modules:ast-core")
     implementation project(path: ":modules:share-layout")
-    implementation project(path: ":modules:bidirectional-llm")
     implementation project(path: ":modules:plugin-api:common")
     implementation project(path: ":modules:plugin-api:intellisense")
 }
 
+// Print version task
 tasks.register('printVersion') {
     doLast {
         println "VERSION_NAME=${project.ext.appVersionName}"
@@ -169,8 +159,12 @@ tasks.register('printVersion') {
     }
 }
 
+// Kotlin configuration - disabled/minimal since all code is Java
+// JVM target set to 17 for Java compatibility
 kotlin {
     compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
+        // Kotlin compiler configured for Java 17 target
+        // All Kotlin code has been converted to Java
+        jvmTarget = "17"
     }
 }

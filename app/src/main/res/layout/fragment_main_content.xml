@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Main content layout for the CodeOps Studio IDE.
+  ~ Hosts the toolbar, progress indicator, and the base editor fragment.
+  ~ Uses Material 3 components for a modern UI.
+  -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -8,6 +13,7 @@
     android:fitsSystemWindows="true"
     android:orientation="vertical">
 
+    <!-- App bar containing the toolbar and progress indicator -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
@@ -24,6 +30,7 @@
             tools:navigationIcon="@drawable/ic_menu"
             tools:subtitle="Indexing..." />
 
+        <!-- Linear progress indicator for showing overall operation progress -->
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
@@ -37,9 +44,11 @@
             app:trackInnerCornerRadius="5dp"
             app:indicatorTrackGapSize="5dp"
             android:id="@+id/progress" />
-
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Fragment container for the editor base fragment.
+         Uses ScrollingViewBehavior to enable toolbar scrolling.
+         The BaseFragment contains the main text editor area. -->
     <androidx.fragment.app.FragmentContainerView
         android:layout_height="match_parent"
         android:layout_width="match_parent"
