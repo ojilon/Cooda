@@ -44,10 +44,14 @@ android {
         applicationId project.ext.applicationId
         minSdk 26
         targetSdk 34
-        versionCode project.ext.appVersionCode
-        versionName project.ext.appVersionName
+
+        //version since codebase modernisation
+        versionCode 1
+        versionName "0.0.1"
+
         // Flag to enable support for the new language APIs
         multiDexEnabled true
+
         // Use Java 17 source/target; Kotlin code has been converted to Java
         targetCompatibility JavaVersion.VERSION_17
         sourceCompatibility JavaVersion.VERSION_17
