@@ -36,9 +36,7 @@ def signingEnabled = false
 
 android {
     namespace project.ext.appNameSpace
-    compileSdk {
-        version = 36
-    }
+    compileSdk 36
 
     ndkVersion "29.0.14206865"
 
