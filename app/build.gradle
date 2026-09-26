@@ -40,6 +40,8 @@ android {
         version = 36
     }
 
+    ndkVersion "29.0.14206865"
+
     // Explicit View Binding (matches Wayer / modern Android practice)
     buildFeatures {
         viewBinding true
@@ -133,13 +135,13 @@ dependencies {
     implementation(libs.androidx.navigation.ui)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment)
-    
+
     // Essential native and support libraries
     implementation(libs.other.org.eclipse.lsp4j)
     implementation(libs.other.commonmark)
     implementation(google.material)
     implementation(libs.google.play.services.oss.licenses)
-    
+
     // Firebase - only essential components (no Kotlin-only features)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
