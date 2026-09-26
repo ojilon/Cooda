@@ -96,7 +96,7 @@ static def getGitCommitHash(proj) {
         def process = ["git", "rev-parse", "--short", "HEAD"].execute(null, proj.rootDir)
         process.waitFor()
         def output = process.text.trim()
-        
+
         if (process.exitValue() == 0 && output) {
             return "(${output})"
         } else {
@@ -109,12 +109,12 @@ static def getGitCommitHash(proj) {
 
  static def getGitCommitCount(proj) {
      def pseudoVersionCode = (System.currentTimeMillis() / 1000).intValue()
-     
+
      try {
          def process = ["git", "rev-list", "--count", "HEAD"].execute(null, proj.rootDir)
          process.waitFor()
          def output = process.text.trim()
-        
+
          if (process.exitValue() == 0) {
            try {
                return Math.max(1, output.toInteger())
@@ -133,7 +133,7 @@ project.ext {
     // Versions
     compileSdkVersion = 36
     buildToolsVersion = '36.0.0'
-    targetSdkVersion = 36
+    targetSdkVersion = 34
     minSdkVersion = 26
     javaSourceVersion = JavaVersion.VERSION_17
     javaTargetVersion = JavaVersion.VERSION_17
@@ -144,20 +144,20 @@ project.ext {
 
     def gitHash = getGitCommitHash(project)
     def gitCommitCount = getGitCommitCount(project)
-    
+
     def isReleaseBuild = false
 
     gradle.startParameter.taskNames.each { taskName ->
         def lowerTask = taskName.toLowerCase()
-        
+
         if (lowerTask.contains('release')) {
             isReleaseBuild = true
             return
         }
-        
+
         if (lowerTask == 'assemble' || lowerTask.endsWith(':assemble')) {
             def anyTaskHasDebug = false
-            gradle.startParameter.taskNames.each { t -> 
+            gradle.startParameter.taskNames.each { t ->
                 if (t.toLowerCase().contains('debug')) {
                     anyTaskHasDebug = true
                     return
@@ -169,10 +169,10 @@ project.ext {
             }
         }
     }
-    
+
     def baseVersion = "1.1.1"
     def suffix = ""
-    
+
     if (isReleaseBuild) {
         appVersionName = suffix ? "${baseVersion} ${suffix}" : baseVersion
     } else {
@@ -185,6 +185,6 @@ project.ext {
         }
         appVersionName = parts.join(' ').trim()
     }
-    
+
     appVersionCode = gitCommitCount
 }
