@@ -40,7 +40,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.core.util.Pair;
-import androidx.core.view.GravityCompat;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -60,7 +59,7 @@ import com.eup.codeopsstudio.models.user.User;
 import com.eup.codeopsstudio.observers.ContextualObserver;
 import com.eup.codeopsstudio.palette.providers.WindowProvider;
 import com.eup.codeopsstudio.pane.Pane;
-import com.eup.codeopsstudio.ui.PrimaryDrawerLayout;
+import com.eup.codeopsstudio.ui.drawer.DrawerCoordinator;
 import com.eup.codeopsstudio.ui.editor.panes.WebViewPane;
 import com.eup.codeopsstudio.ui.fcm.AppUpdateCoordinator;
 import com.eup.codeopsstudio.ui.plugin.PluginCoordinator;
@@ -80,9 +79,10 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 /**
- * Main IDE surface: lifecycle, drawer, and ViewModel observers.
+ * Main IDE surface: lifecycle and ViewModel observers.
  * Menu → {@link ToolbarMenuController}; permissions → {@link PermissionCoordinator};
- * updates → {@link AppUpdateCoordinator}; plugins → {@link PluginCoordinator}.
+ * updates → {@link AppUpdateCoordinator}; plugins → {@link PluginCoordinator};
+ * drawer → {@link DrawerCoordinator}.
  */
 public class MainFragment extends Fragment
         implements SharedPreferences.OnSharedPreferenceChangeListener, MenuProvider {
@@ -102,6 +102,7 @@ public class MainFragment extends Fragment
     private PermissionCoordinator permissionCoordinator;
     private AppUpdateCoordinator appUpdateCoordinator;
     private PluginCoordinator pluginCoordinator;
+    private DrawerCoordinator drawerCoordinator;
 
     public static MainFragment newInstance() {
         return new MainFragment();
@@ -219,8 +220,6 @@ public class MainFragment extends Fragment
         logListener = logs -> activity.runOnUiThread(() -> logger.postLog(logs));
 
         activity.addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
-        setUpDrawer();
-
         onBackPressedCallback =
                 new OnBackPressedCallback(false) {
                     @Override
@@ -230,19 +229,50 @@ public class MainFragment extends Fragment
                             webViewPane.getWebView().goBack();
                             return;
                         }
-
-                        if (rootView instanceof PrimaryDrawerLayout) {
-                            if (mainViewModel.isDrawerOpen()) {
-                                mainViewModel.requestCloseDrawer();
-                            } else {
-                                mainViewModel.requestExit();
-                            }
+                        if (drawerCoordinator != null) {
+                            drawerCoordinator.handleBackPress();
                         }
                     }
                 };
 
         activity.getOnBackPressedDispatcher()
                 .addCallback(getViewLifecycleOwner(), onBackPressedCallback);
+
+        drawerCoordinator =
+                new DrawerCoordinator(
+                        new DrawerCoordinator.Host() {
+                            @NonNull
+                            @Override
+                            public View rootView() {
+                                return rootView;
+                            }
+
+                            @NonNull
+                            @Override
+                            public FragmentMainBinding binding() {
+                                return binding;
+                            }
+
+                            @NonNull
+                            @Override
+                            public MainViewModel mainViewModel() {
+                                return mainViewModel;
+                            }
+
+                            @NonNull
+                            @Override
+                            public androidx.lifecycle.LifecycleOwner viewLifecycleOwner() {
+                                return getViewLifecycleOwner();
+                            }
+
+                            @Override
+                            public void setBackPressEnabled(boolean enabled) {
+                                if (onBackPressedCallback != null) {
+                                    onBackPressedCallback.setEnabled(enabled);
+                                }
+                            }
+                        });
+        drawerCoordinator.setup();
 
         permissionCoordinator.ensureStoragePermission();
         permissionCoordinator.ensureNotificationPermissionGranted();
@@ -352,8 +382,8 @@ public class MainFragment extends Fragment
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
-        if (rootView instanceof PrimaryDrawerLayout drawer) {
-            outState.putBoolean("start_drawer_state", drawer.isDrawerOpen(GravityCompat.START));
+        if (drawerCoordinator != null) {
+            drawerCoordinator.saveState(outState);
         }
         super.onSaveInstanceState(outState);
     }
@@ -361,8 +391,8 @@ public class MainFragment extends Fragment
     @Override
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
-        if (savedInstanceState != null) {
-            restoreViewState(savedInstanceState);
+        if (drawerCoordinator != null) {
+            drawerCoordinator.restoreState(savedInstanceState);
         }
     }
 
@@ -443,66 +473,6 @@ public class MainFragment extends Fragment
 
     public void invalidateMenu() {
         requireActivity().invalidateMenu();
-    }
-
-    private void setUpDrawer() {
-        if (rootView instanceof PrimaryDrawerLayout drawerLayout) {
-            mainViewModel.setDrawerInstance(true);
-            mainViewModel
-                    .getDrawerState()
-                    .observe(
-                            getViewLifecycleOwner(),
-                            event -> {
-                                Boolean shouldOpenDrawer = event.getContentIfNotHandled();
-                                if (Boolean.TRUE.equals(shouldOpenDrawer)) {
-                                    drawerLayout.openDrawer(binding.navPrimarySideBar);
-                                } else {
-                                    drawerLayout.closeDrawer(binding.navPrimarySideBar);
-                                }
-                            });
-
-            binding.fragmentMainContent.toolbar.setNavigationOnClickListener(
-                    v -> {
-                        if (drawerLayout.isDrawerOpen(binding.navPrimarySideBar)) {
-                            mainViewModel.requestCloseDrawer();
-                        } else if (!drawerLayout.isDrawerOpen(binding.navPrimarySideBar)) {
-                            mainViewModel.requestOpenDrawer();
-                        }
-                    });
-
-            drawerLayout.addDrawerListener(
-                    new PrimaryDrawerLayout.SimpleDrawerListener() {
-                        @Override
-                        public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
-                            float factor = 1f;
-                            float translation = drawerView.getWidth() * slideOffset * factor;
-                            binding.fragmentMainContent.mainContentLayout.setTranslationX(
-                                    translation);
-                        }
-
-                        @Override
-                        public void onDrawerOpened(@NonNull View drawerView) {
-                            onBackPressedCallback.setEnabled(true);
-                        }
-
-                        @Override
-                        public void onDrawerClosed(@NonNull View drawerView) {
-                            onBackPressedCallback.setEnabled(false);
-                        }
-                    });
-        } else {
-            mainViewModel.setDrawerInstance(false);
-            binding.fragmentMainContent.toolbar.setNavigationIcon(null);
-        }
-    }
-
-    private void restoreViewState(@NonNull Bundle state) {
-        if (rootView instanceof PrimaryDrawerLayout drawer) {
-            boolean shouldOpenDrawer = state.getBoolean("start_drawer_state", false);
-            if (shouldOpenDrawer) {
-                drawer.openDrawer(GravityCompat.START);
-            }
-        }
     }
 
     public void openFileInPane(File file) {
