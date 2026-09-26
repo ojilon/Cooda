@@ -49,9 +49,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.eup.codeopsstudio.common.Constants;
 import com.eup.codeopsstudio.common.ILog;
-import com.eup.codeopsstudio.common.archive.ZIPArchive;
 import com.eup.codeopsstudio.common.models.MetaDocument;
-import com.eup.codeopsstudio.common.util.FileUtil;
 import com.eup.codeopsstudio.common.util.PreferencesUtils;
 import com.eup.codeopsstudio.databinding.FragmentMainBinding;
 import com.eup.codeopsstudio.databinding.LayoutDialogTextInputBinding;
@@ -65,6 +63,7 @@ import com.eup.codeopsstudio.pane.Pane;
 import com.eup.codeopsstudio.ui.PrimaryDrawerLayout;
 import com.eup.codeopsstudio.ui.editor.panes.WebViewPane;
 import com.eup.codeopsstudio.ui.fcm.AppUpdateCoordinator;
+import com.eup.codeopsstudio.ui.plugin.PluginCoordinator;
 import com.eup.codeopsstudio.ui.menu.ToolbarMenuController;
 import com.eup.codeopsstudio.ui.permission.PermissionCoordinator;
 import com.eup.codeopsstudio.util.BaseUtil;
@@ -75,7 +74,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.j2objc.annotations.UsedByReflection;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -84,7 +82,7 @@ import org.greenrobot.eventbus.ThreadMode;
 /**
  * Main IDE surface: lifecycle, drawer, and ViewModel observers.
  * Menu → {@link ToolbarMenuController}; permissions → {@link PermissionCoordinator};
- * updates → {@link AppUpdateCoordinator}.
+ * updates → {@link AppUpdateCoordinator}; plugins → {@link PluginCoordinator}.
  */
 public class MainFragment extends Fragment
         implements SharedPreferences.OnSharedPreferenceChangeListener, MenuProvider {
@@ -103,6 +101,7 @@ public class MainFragment extends Fragment
     private ToolbarMenuController toolbarMenuController;
     private PermissionCoordinator permissionCoordinator;
     private AppUpdateCoordinator appUpdateCoordinator;
+    private PluginCoordinator pluginCoordinator;
 
     public static MainFragment newInstance() {
         return new MainFragment();
@@ -123,6 +122,8 @@ public class MainFragment extends Fragment
         fileViewModel = new ViewModelProvider(requireActivity()).get(FileViewModel.class);
         lifeCycleObserver =
                 new ContextualObserver(requireContext(), resultRegistry, requireActivity());
+
+        pluginCoordinator = new PluginCoordinator();
 
         permissionCoordinator =
                 new PermissionCoordinator(
@@ -148,7 +149,7 @@ public class MainFragment extends Fragment
 
                             @Override
                             public void onStorageReady() {
-                                checkPlugins();
+                                pluginCoordinator.checkAndInstall(requireContext());
                             }
 
                             @Override
@@ -507,25 +508,6 @@ public class MainFragment extends Fragment
     public void openFileInPane(File file) {
         mainViewModel.openEditorFile(file);
         invalidateMenu();
-    }
-
-    // NATIVE_CANDIDATE: plugin discovery/install may move behind a native bridge later
-    private void checkPlugins() {
-        logger.d(TAG, getString(R.string.msg_checking_plugins));
-        installErudaConsole();
-    }
-
-    private void installErudaConsole() {
-        try {
-            logger.i(TAG, getString(R.string.msg_installing_js_console_plugins));
-            int bufferSize = PreferencesUtils.getCurrentBufferSize();
-            String asset = "plugins/eruda.min.zip";
-            File destDir = FileUtil.Path.PLUGINS_FOLDER;
-            var archive = ZIPArchive.fromAssets(requireContext(), asset, destDir, bufferSize);
-            archive.unzip();
-        } catch (IOException e) {
-            logger.e(TAG, "Plugin installation failed: " + e.getMessage());
-        }
     }
 
     private void restoreLastProject() {
