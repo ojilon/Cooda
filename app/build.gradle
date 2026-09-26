@@ -62,6 +62,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         // Enable desugar for Java 8 language features
         desugarEnabled true
+
+        // Prepared for JNI (step D). Harmless until native code is linked.
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
     }
 
     if (secretsPropertiesFile.exists() && secretsPropertiesFile.text.trim()) {
@@ -102,19 +107,14 @@ android {
     // Build tools version - using 34.0.0 to minimize unnecessary updates
     buildToolsVersion "34.0.0"
 
-    // NDK configuration - specifying version 29 only to avoid multiple downloads
-    externalNativeBuild {
-        ndk {
-            version "29"
-        }
-    }
-
-    // Configure only essential SDK components to minimize downloads
-    // This ensures only required tools are installed
-    ndk {
-        // Only NDK 29 will be available
-        abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-    }
+    // JNI/CMake is intentionally not enabled yet.
+    // Step D will add src/main/cpp/CMakeLists.txt + libcooda and uncomment:
+    // externalNativeBuild {
+    //     cmake {
+    //         path file('src/main/cpp/CMakeLists.txt')
+    //         version '3.22.1'
+    //     }
+    // }
 }
 
 dependencies {
