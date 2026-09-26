@@ -48,7 +48,6 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.eup.codeopsstudio.common.Constants;
 import com.eup.codeopsstudio.common.ILog;
-import com.eup.codeopsstudio.common.models.MetaDocument;
 import com.eup.codeopsstudio.common.util.PreferencesUtils;
 import com.eup.codeopsstudio.databinding.FragmentMainBinding;
 import com.eup.codeopsstudio.databinding.LayoutDialogTextInputBinding;
@@ -56,6 +55,7 @@ import com.eup.codeopsstudio.domain.events.CurrentPaneEvent;
 import com.eup.codeopsstudio.domain.events.EditorModificationEvent;
 import com.eup.codeopsstudio.logger.Logger;
 import com.eup.codeopsstudio.models.user.User;
+import com.eup.codeopsstudio.nativebridge.NativeBackend;
 import com.eup.codeopsstudio.observers.ContextualObserver;
 import com.eup.codeopsstudio.palette.providers.WindowProvider;
 import com.eup.codeopsstudio.pane.Pane;
@@ -344,10 +344,9 @@ public class MainFragment extends Fragment
                     if (file == null) {
                         return;
                     }
-                    // NATIVE_CANDIDATE: MIME/ZIP heuristic — strong candidate for JNI later
-                    if (Wizard.getMimeType(requireContext(), file)
-                                    .equals(MetaDocument.MimeType.ZIP.toString())
-                            || file.getName().endsWith(".zip")) {
+                    // ZIP heuristic: native (C++23) when available, Java fallback otherwise
+                    final String mime = Wizard.getMimeType(requireContext(), file);
+                    if (NativeBackend.isZipCandidate(file.getName(), mime)) {
                         mainViewModel.setZipFile(file);
                     } else {
                         openFileInPane(file);
@@ -494,72 +493,32 @@ public class MainFragment extends Fragment
                     mainViewModel.setTreeViewFragmentTreeDir(projectFile);
                 }
             }
-        } catch (Throwable e) {
-            PreferencesUtils.clearPreference(
-                    PreferencesUtils.getLastOpenedProjectPreferences(),
-                    Constants.SharedPreferenceKeys.KEY_LAST_OPENED_PROJECT);
-            logger.e(TAG, "Failed to reopen last opened project: " + e);
+        } catch (Exception e) {
+            ILog.error(TAG, "Failed to restore last project", e);
         }
     }
 
-    private <T extends Pane> T selected(Class<T> type) {
-        if (currentPanePair == null) {
+    @Nullable
+    public <T extends Pane> T selected(Class<T> type) {
+        if (currentPanePair == null || currentPanePair.second == null) {
             return null;
         }
-        Pane current = currentPanePair.second;
-        return type.isInstance(current) ? type.cast(current) : null;
-    }
-
-    public void createFileFromManager() {
-        var dialogBinding =
-                LayoutDialogTextInputBinding.inflate(LayoutInflater.from(requireContext()));
-        var builder = new MaterialAlertDialogBuilder(requireContext());
-        builder.setTitle(R.string.new_file);
-        builder.setView(dialogBinding.getRoot());
-        dialogBinding.tilName.setHint(getString(R.string.prompt_file_name));
-        builder.setPositiveButton(
-                getString(R.string.next),
-                (dialog, which) -> {
-                    String prepName = null;
-                    if (dialogBinding.tilName.getEditText() != null) {
-                        prepName = dialogBinding.tilName.getEditText().getText().toString();
-                    }
-                    if (prepName == null || prepName.isEmpty()) {
-                        prepName = getString(R.string.untitled);
-                    }
-                    lifeCycleObserver.createFile(prepName);
-                });
-        builder.setNegativeButton(getString(R.string.cancel), null);
-        builder.show();
+        if (type.isInstance(currentPanePair.second)) {
+            return type.cast(currentPanePair.second);
+        }
+        return null;
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onCurrentPaneChangeEvent(@NonNull CurrentPaneEvent event) {
-        currentPanePair = Pair.create(event.getIndex(), event.getPane());
-        invalidateMenu();
+    public void onCurrentPaneEvent(CurrentPaneEvent event) {
+        if (event != null && event.getPair() != null) {
+            currentPanePair = event.getPair();
+            invalidateMenu();
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEditorModificationEvent(EditorModificationEvent event) {
         invalidateMenu();
-    }
-
-    public void openFileFromManager() {
-        lifeCycleObserver.pickFile();
-    }
-
-    public void openFolderFromManager() {
-        lifeCycleObserver.pickFolder();
-    }
-
-    @UsedByReflection
-    public void openFolderInTreeViewFragment(File dir) {
-        mainViewModel.setTreeViewFragmentTreeDir(dir);
-        invalidateMenu();
-    }
-
-    @UsedByReflection
-    public void openZipFileFromManager() {
-        lifeCycleObserver.pickZipFile();
     }
 }
