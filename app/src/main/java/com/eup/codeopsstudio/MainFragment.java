@@ -44,7 +44,6 @@ import androidx.core.view.GravityCompat;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -65,15 +64,13 @@ import com.eup.codeopsstudio.palette.providers.WindowProvider;
 import com.eup.codeopsstudio.pane.Pane;
 import com.eup.codeopsstudio.ui.PrimaryDrawerLayout;
 import com.eup.codeopsstudio.ui.editor.panes.WebViewPane;
-import com.eup.codeopsstudio.ui.fcm.UpdateBottomSheet;
+import com.eup.codeopsstudio.ui.fcm.AppUpdateCoordinator;
 import com.eup.codeopsstudio.ui.menu.ToolbarMenuController;
 import com.eup.codeopsstudio.ui.permission.PermissionCoordinator;
 import com.eup.codeopsstudio.util.BaseUtil;
 import com.eup.codeopsstudio.util.Wizard;
-import com.eup.codeopsstudio.util.versioning.VersionManager;
 import com.eup.codeopsstudio.viewmodel.FileViewModel;
 import com.eup.codeopsstudio.viewmodel.MainViewModel;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.j2objc.annotations.UsedByReflection;
 
@@ -86,7 +83,8 @@ import org.greenrobot.eventbus.ThreadMode;
 
 /**
  * Main IDE surface: lifecycle, drawer, and ViewModel observers.
- * Menu → {@link ToolbarMenuController}; permissions → {@link PermissionCoordinator}.
+ * Menu → {@link ToolbarMenuController}; permissions → {@link PermissionCoordinator};
+ * updates → {@link AppUpdateCoordinator}.
  */
 public class MainFragment extends Fragment
         implements SharedPreferences.OnSharedPreferenceChangeListener, MenuProvider {
@@ -104,6 +102,7 @@ public class MainFragment extends Fragment
     private Pair<Integer, Pane> currentPanePair = Pair.create(-1, null);
     private ToolbarMenuController toolbarMenuController;
     private PermissionCoordinator permissionCoordinator;
+    private AppUpdateCoordinator appUpdateCoordinator;
 
     public static MainFragment newInstance() {
         return new MainFragment();
@@ -159,6 +158,20 @@ public class MainFragment extends Fragment
                             }
                         });
         permissionCoordinator.attach(this);
+
+        appUpdateCoordinator =
+                new AppUpdateCoordinator(
+                        new AppUpdateCoordinator.Host() {
+                            @Override
+                            public androidx.fragment.app.FragmentManager childFragmentManager() {
+                                return getChildFragmentManager();
+                            }
+
+                            @Override
+                            public boolean canShowUi() {
+                                return isAdded() && !isRemoving() && !isDetached();
+                            }
+                        });
 
         toolbarMenuController =
                 new ToolbarMenuController(
@@ -281,7 +294,7 @@ public class MainFragment extends Fragment
                     }
                     Bundle bundle = eventBundle.getContentIfNotHandled();
                     if (bundle != null) {
-                        handleIntentBundle(bundle);
+                        appUpdateCoordinator.handleIntentBundle(bundle);
                     }
                 });
 
@@ -325,7 +338,7 @@ public class MainFragment extends Fragment
             User.registerSession();
         }
 
-        checkForStoredAppUpdates();
+        appUpdateCoordinator.checkForStoredAppUpdates();
     }
 
     @Override
@@ -596,85 +609,5 @@ public class MainFragment extends Fragment
     @UsedByReflection
     public void openZipFileFromManager() {
         lifeCycleObserver.pickZipFile();
-    }
-
-    private void handleIntentBundle(@NonNull Bundle bundle) {
-        if (!isAdded() || isRemoving() || isDetached()) {
-            return;
-        }
-        String type = bundle.getString(Constants.FCM_NOTIFICATION_TYPE);
-        if (type != null) {
-            handleAppUpdateNotification(bundle);
-        }
-    }
-
-    private void handleAppUpdateNotification(@NonNull Bundle bundle) {
-        ILog.debug(TAG, "#handleAppUpdateNotification");
-        String changeLog = bundle.getString(Constants.KEY_CHANGELOG);
-        String minVersion = bundle.getString(Constants.KEY_MIN_VERSION);
-        String downloadUrl = bundle.getString(Constants.KEY_DOWNLOAD_URL);
-        String latestVersion = bundle.getString(Constants.KEY_UPDATE_VERSION);
-        String downloadSize = bundle.getString(Constants.KEY_UPDATE_DOWNLOAD_SIZE);
-        boolean forceUpdate = Wizard.toBoolean(bundle.getString(Constants.KEY_FORCE_UPDATE));
-        ILog.debug(TAG, "Update Check: Version=" + latestVersion + ", URL=" + downloadUrl);
-        if (Wizard.isEmpty(latestVersion) || Wizard.isEmpty(downloadUrl)) {
-            return;
-        }
-        if (VersionManager.isForceUpdateRequired(minVersion)) {
-            showUpdateBottomSheet(
-                    minVersion, downloadUrl, changeLog, latestVersion, true, downloadSize);
-        } else if (VersionManager.isUpdateAvailable(latestVersion)) {
-            showUpdateBottomSheet(
-                    minVersion, downloadUrl, changeLog, latestVersion, forceUpdate, downloadSize);
-        }
-    }
-
-    private void showUpdateBottomSheet(
-            String minVersion,
-            String downloadUrl,
-            String changeLog,
-            String version,
-            boolean forceUpdate,
-            String downloadSize) {
-        FragmentManager fragmentManager = getChildFragmentManager();
-        var fragment =
-                (BottomSheetDialogFragment)
-                        fragmentManager.findFragmentByTag(UpdateBottomSheet.TAG);
-        if (fragment != null && fragment.isVisible()) {
-            ILog.debug(TAG, "Fragment is null is already visible");
-            return;
-        }
-        var bottomSheet =
-                UpdateBottomSheet.newInstance(
-                        minVersion, version, changeLog, downloadUrl, forceUpdate, downloadSize);
-        bottomSheet.show(fragmentManager, UpdateBottomSheet.TAG);
-    }
-
-    private void checkForStoredAppUpdates() {
-        SharedPreferences prefs = PreferencesUtils.getAppUpdatePreferences();
-        ILog.debug(TAG, "#checkForStoredAppUpdates");
-        String minVersion = prefs.getString(Constants.PREF_UPDATE_MIN_VERSION, "");
-        String latestVersion = prefs.getString(Constants.PREF_UPDATE_VERSION, "");
-        String changeLog = prefs.getString(Constants.PREF_UPDATE_CHANGELOG, "");
-        String downloadUrl = prefs.getString(Constants.PREF_UPDATE_DOWNLOAD_URL, "");
-        String downloadSize = prefs.getString(Constants.PREF_UPDATE_DOWNLOAD_SIZE, "");
-        boolean forceUpdate =
-                Wizard.toBoolean(prefs.getString(Constants.PREF_UPDATE_FORCED, "false"));
-        long lastRemindTime = prefs.getLong(Constants.PREF_LAST_REMIND_TIME, 0L);
-        long currentTime = System.currentTimeMillis();
-        if (lastRemindTime > 0 && (currentTime - lastRemindTime < Constants.REMIND_INTERVAL_MS)) {
-            return;
-        }
-        ILog.debug(TAG, "Update Check: Version=" + latestVersion + ", URL=" + downloadUrl);
-        if (Wizard.isEmpty(latestVersion) || Wizard.isEmpty(downloadUrl)) {
-            return;
-        }
-        if (VersionManager.isForceUpdateRequired(minVersion)) {
-            showUpdateBottomSheet(
-                    minVersion, downloadUrl, changeLog, latestVersion, true, downloadSize);
-        } else if (VersionManager.isUpdateAvailable(latestVersion)) {
-            showUpdateBottomSheet(
-                    minVersion, downloadUrl, changeLog, latestVersion, forceUpdate, downloadSize);
-        }
     }
 }
