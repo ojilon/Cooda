@@ -38,6 +38,7 @@ import com.eup.codeopsstudio.common.ILog;
 import com.eup.codeopsstudio.common.SystemArchitecture;
 import com.eup.codeopsstudio.common.util.PreferencesUtils;
 import com.eup.codeopsstudio.editor.ContextualCodeEditor;
+import com.eup.codeopsstudio.nativebridge.NativeBackend;
 import com.eup.codeopsstudio.plugin.PluginScanner;
 import com.eup.codeopsstudio.ui.debug.CrashActivity;
 import com.eup.codeopsstudio.util.BinaryFileChecker;
@@ -72,6 +73,13 @@ public class IdeApplication extends Application implements Thread.UncaughtExcept
     super.onCreate();
     instance = this;
     ContextManager.initialize(getGlobalContext());
+
+    // JNI backend (libcooda_native) — load early; safe if unavailable
+    if (NativeBackend.isAvailable()) {
+      ILog.info(TAG, "Native backend: " + NativeBackend.nativeVersion());
+    } else {
+      ILog.info(TAG, "Native backend unavailable (libcooda_native not loaded)");
+    }
 
     BinaryFileChecker.setAggressiveness(0.1);
 
