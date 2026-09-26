@@ -63,9 +63,16 @@ android {
         // Enable desugar for Java 8 language features
         desugarEnabled true
 
-        // Prepared for JNI (step D). Harmless until native code is linked.
+        // JNI: ABI filters + CMake args for libcooda_native
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++23'
+                arguments '-DANDROID_STL=c++_shared'
+            }
         }
     }
 
@@ -107,14 +114,13 @@ android {
     // Build tools version - using 34.0.0 to minimize unnecessary updates
     buildToolsVersion "34.0.0"
 
-    // JNI/CMake is intentionally not enabled yet.
-    // Step D will add src/main/cpp/CMakeLists.txt + libcooda and uncomment:
-    // externalNativeBuild {
-    //     cmake {
-    //         path file('src/main/cpp/CMakeLists.txt')
-    //         version '3.22.1'
-    //     }
-    // }
+    // JNI backend (step D): multi-module CMake under src/main/cpp
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
 }
 
 dependencies {
