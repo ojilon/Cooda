@@ -30,7 +30,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
-import com.eup.codeopsstudio.R;
+import com.eup.codeopsstudio.databinding.ItemCommandBinding;
+import com.eup.codeopsstudio.databinding.ItemCommandHeaderBinding;
 
 
 /**
@@ -51,9 +52,9 @@ public class PaletteAdapter extends ListAdapter<PaletteItem, RecyclerView.ViewHo
   public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
     LayoutInflater inflater = LayoutInflater.from(parent.getContext());
     if (viewType == PaletteItem.TYPE_HEADER) {
-      return new HeaderViewHolder(inflater.inflate(R.layout.item_command_header, parent, false));
+      return new HeaderViewHolder(ItemCommandHeaderBinding.inflate(inflater, parent, false));
     }
-    return new CommandViewHolder(inflater.inflate(R.layout.item_command, parent, false));
+    return new CommandViewHolder(ItemCommandBinding.inflate(inflater, parent, false));
   }
 
   @Override
@@ -106,23 +107,23 @@ public class PaletteAdapter extends ListAdapter<PaletteItem, RecyclerView.ViewHo
   }
 
   static class HeaderViewHolder extends RecyclerView.ViewHolder {
-    TextView tvHeader;
+    final TextView tvHeader;
 
-    HeaderViewHolder(View v) {
-      super(v);
-      tvHeader = v.findViewById(R.id.tvHeader);
+    HeaderViewHolder(ItemCommandHeaderBinding binding) {
+      super(binding.getRoot());
+      tvHeader = binding.tvHeader;
     }
   }
 
   static class CommandViewHolder extends RecyclerView.ViewHolder {
-    TextView tvTitle, tvSubtitle, tvTag, tvShortcut;
+    final TextView tvTitle, tvSubtitle, tvTag, tvShortcut;
 
-    CommandViewHolder(View v) {
-      super(v);
-      tvTitle = v.findViewById(R.id.tvTitle);
-      tvSubtitle = v.findViewById(R.id.tvSubtitle);
-      tvTag = v.findViewById(R.id.tvTag);
-      tvShortcut = v.findViewById(R.id.tvShortcut);
+    CommandViewHolder(ItemCommandBinding binding) {
+      super(binding.getRoot());
+      tvTitle = binding.tvTitle;
+      tvSubtitle = binding.tvSubtitle;
+      tvTag = binding.tvTag;
+      tvShortcut = binding.tvShortcut;
     }
   }
 }
