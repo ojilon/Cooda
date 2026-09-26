@@ -8,6 +8,7 @@
 package com.eup.codeopsstudio.nativebridge;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Loads {@code cooda_native} and exposes native entry points.
@@ -15,6 +16,7 @@ import androidx.annotation.NonNull;
  */
 public final class NativeBackend {
 
+    private static final String ZIP_MIME = "application/zip";
     private static final boolean LOADED;
 
     static {
@@ -39,4 +41,34 @@ public final class NativeBackend {
      */
     @NonNull
     public static native String nativeVersion();
+
+    /**
+     * Whether {@code pathOrName} / {@code mimeType} looks like a ZIP archive.
+     * Uses C++ heuristic when the library is loaded; otherwise pure Java fallback.
+     */
+    public static boolean isZipCandidate(@Nullable String pathOrName, @Nullable String mimeType) {
+        final String path = pathOrName != null ? pathOrName : "";
+        final String mime = mimeType != null ? mimeType : "";
+        if (LOADED) {
+            return isZipCandidateNative(path, mime);
+        }
+        return isZipCandidateJava(path, mime);
+    }
+
+    /** JNI: implemented in modules/zip_heuristics via cooda_native.cpp */
+    private static native boolean isZipCandidateNative(@NonNull String pathOrName,
+                                                       @NonNull String mimeType);
+
+    /** Fallback when libcooda_native is not packaged (e.g. unit tests). */
+    static boolean isZipCandidateJava(@NonNull String pathOrName, @NonNull String mimeType) {
+        if (!mimeType.isEmpty() && ZIP_MIME.equalsIgnoreCase(mimeType)) {
+            return true;
+        }
+        if (pathOrName.isEmpty()) {
+            return false;
+        }
+        int slash = Math.max(pathOrName.lastIndexOf('/'), pathOrName.lastIndexOf('\\'));
+        String name = slash >= 0 ? pathOrName.substring(slash + 1) : pathOrName;
+        return name.toLowerCase().endsWith(".zip");
+    }
 }
