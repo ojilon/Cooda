@@ -25,7 +25,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
-    id "com.google.android.gms.oss-licenses-plugin"
+    alias(libs.plugins.oss.licenses)
 }
 
 apply from: 'google-services-dummy.gradle'
@@ -36,23 +36,44 @@ def signingEnabled = false
 
 android {
     namespace project.ext.appNameSpace
+    // Must match library modules (36.1) or :app:checkDebugAarMetadata fails
     compileSdk {
-        version = 36
+        version = release(project.ext.compileSdkVersion) {
+            minorApiLevel = 1
+        }
+    }
+
+    ndkVersion "29.0.14206865"
+
+    // Explicit View Binding (matches Wayer / modern Android practice)
+    buildFeatures {
+        viewBinding true
+        buildConfig true
     }
 
     defaultConfig {
         applicationId project.ext.applicationId
         minSdk 26
         targetSdk 34
-        versionCode project.ext.appVersionCode
-        versionName project.ext.appVersionName
+
+        //version since codebase modernisation
+        versionCode 1
+        versionName "0.0.1"
+
         // Flag to enable support for the new language APIs
         multiDexEnabled true
-        // Use Java 17 source/target; Kotlin code has been converted to Java
-        targetCompatibility JavaVersion.VERSION_17
-        sourceCompatibility JavaVersion.VERSION_17
-        // Enable desugar for Java 8 language features
-        desugarEnabled true
+
+        // JNI: ABI filters + CMake args for libcooda_native
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++23'
+                arguments '-DANDROID_STL=c++_shared'
+            }
+        }
     }
 
     if (secretsPropertiesFile.exists() && secretsPropertiesFile.text.trim()) {
@@ -90,21 +111,26 @@ android {
         }
     }
 
-    // Build tools version - using 34.0.0 to minimize unnecessary updates
-    buildToolsVersion "34.0.0"
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
+    }
 
-    // NDK configuration - specifying version 29 only to avoid multiple downloads
+    // JNI backend (step D): multi-module CMake under src/main/cpp
     externalNativeBuild {
-        ndk {
-            version "29"
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.22.1'
         }
     }
 
-    // Configure only essential SDK components to minimize downloads
-    // This ensures only required tools are installed
-    ndk {
-        // Only NDK 29 will be available
-        abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+    // jgit + jgit-ssh-jsch both ship plugin.properties (Eclipse metadata,
+    // unused at runtime) — keep the first instead of failing the merge
+    packagingOptions {
+        resources {
+            pickFirsts += ['plugin.properties']
+        }
     }
 }
 
@@ -118,13 +144,13 @@ dependencies {
     implementation(libs.androidx.navigation.ui)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment)
-    
+
     // Essential native and support libraries
     implementation(libs.other.org.eclipse.lsp4j)
     implementation(libs.other.commonmark)
-    implementation(google.material)
+    implementation(libs.google.material)
     implementation(libs.google.play.services.oss.licenses)
-    
+
     // Firebase - only essential components (no Kotlin-only features)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
@@ -135,8 +161,12 @@ dependencies {
     testImplementation libs.other.junit
     androidTestImplementation libs.other.ext.junit
     androidTestImplementation libs.other.espresso.core
-    // leakcanary and sora-editor are Kotlin-based, excluded for Java-only setup
+    // Java-only sources; Kotlin-written libs (sora-editor) are consumed as deps via :code-editor
     coreLibraryDesugaring(libs.other.desugar)
+
+    // Image loading (CodeOpsGlideModule, BackgroundMessagingService)
+    implementation(libs.other.glide)
+    annotationProcessor(libs.other.glide.compiler)
 
     implementation project(path: ":common")
     implementation project(path: ":server")
@@ -144,6 +174,7 @@ dependencies {
     implementation project(path: ":shared-res")
     implementation project(path: ":code-editor")
     implementation project(path: ":modules:treeview")
+    implementation project(path: ":modules:bidirectional-llm")
     implementation project(path: ":modules:plugin:runtime")
     implementation project(path: ":modules:ast-core")
     implementation project(path: ":modules:share-layout")
@@ -159,12 +190,4 @@ tasks.register('printVersion') {
     }
 }
 
-// Kotlin configuration - disabled/minimal since all code is Java
-// JVM target set to 17 for Java compatibility
-kotlin {
-    compilerOptions {
-        // Kotlin compiler configured for Java 17 target
-        // All Kotlin code has been converted to Java
-        jvmTarget = "17"
-    }
-}
+

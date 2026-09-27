@@ -1,0 +1,16 @@
+# ZIP heuristics module — contributes sources to parent aggregator
+set(ZIP_HEURISTICS_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/zip_heuristics.cpp
+)
+
+set(COODA_MODULE_SOURCES
+    ${COODA_MODULE_SOURCES}
+    ${ZIP_HEURISTICS_SOURCES}
+    PARENT_SCOPE
+)
+
+set(COODA_MODULE_INCLUDE_DIRS
+    ${COODA_MODULE_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    PARENT_SCOPE
+)

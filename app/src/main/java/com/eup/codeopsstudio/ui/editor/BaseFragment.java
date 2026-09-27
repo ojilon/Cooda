@@ -44,6 +44,7 @@ import com.eup.codeopsstudio.common.ILog;
 import com.eup.codeopsstudio.common.models.ProjectEvent;
 import com.eup.codeopsstudio.common.util.PreferencesUtils;
 import com.eup.codeopsstudio.databinding.FragmentBaseBinding;
+import com.eup.codeopsstudio.databinding.PaneTabItemBinding;
 import com.eup.codeopsstudio.domain.events.CurrentPaneEvent;
 import com.eup.codeopsstudio.domain.events.EditorModificationEvent;
 import com.eup.codeopsstudio.logger.Logger;
@@ -143,12 +144,12 @@ public class BaseFragment extends Fragment
 
   @Override
   public ImageButton getTabCloseImageButton(@NonNull View view) {
-    return view.findViewById(R.id.pane_action_button);
+    return PaneTabItemBinding.bind(view).paneActionButton;
   }
 
   @Override
   public ImageView getTabIconImageView(@NonNull View view) {
-    return view.findViewById(R.id.tab_icon);
+    return PaneTabItemBinding.bind(view).tabIcon;
   }
 
   @Override
@@ -178,7 +179,7 @@ public class BaseFragment extends Fragment
 
   @Override
   public TextView getTabTitleTextView(@NonNull View view) {
-    return view.findViewById(R.id.tab_text);
+    return PaneTabItemBinding.bind(view).tabText;
   }
 
   @Override
@@ -313,7 +314,6 @@ public class BaseFragment extends Fragment
   }
 
   private void onPanesReadyForRestoration(List<Pane> loadedPanes) {
-    // SAFETY CHECK: If the app was stopped while loading panes, stop here.
     if (!isAdded() || isStateSaved()) {
       ILog.warning(TAG, "Skipping pane restoration: Fragment is not added or state is saved.");
       return;
@@ -343,14 +343,13 @@ public class BaseFragment extends Fragment
       paneWindow.selectTab(paneToSelect);
     } else if (!paneWindow.getPanes().isEmpty()) {
       ILog.info(TAG, "Falling back to first tab");
-      paneWindow.selectTab(0); // fallback to first tab
+      paneWindow.selectTab(0);
     }
 
     paneWindow.syncTabs();
   }
 
   private boolean isPaneDuplicate(Pane newPane) {
-    // Check for duplicates
     if (newPane instanceof WelcomePane) {
       return paneWindow.findPane(WelcomePane.class) != null;
     }
@@ -400,7 +399,6 @@ public class BaseFragment extends Fragment
   }
 
   private void restoreCodeEditorPane(@NonNull CodeEditorPane pane) {
-    // CodeEditorPane handles restoration
     if (pane.hasPersistedEditorChanges()) {
       ILog.debug(
           TAG,
@@ -466,7 +464,6 @@ public class BaseFragment extends Fragment
         file -> {
           if (file != null && file.exists()) {
             var fileName = file.getName();
-            // Sanity checks
             if (fileName.endsWith(".apk")) {
               Wizard.installApplication(requireContext(), file);
             } else {
@@ -531,7 +528,7 @@ public class BaseFragment extends Fragment
       paneWindow.add(pane, select);
     } else {
       mainViewModel.requestCloseDrawer();
-      paneWindow.selectTab(pane); // already exists
+      paneWindow.selectTab(pane);
     }
   }
 
@@ -554,116 +551,66 @@ public class BaseFragment extends Fragment
             CodeEditorPane.class,
             pane -> {
               String path = pane.getFilePath();
-              boolean found = path != null && path.equals(file.getAbsolutePath()); // already opened
-              ILog.debug(TAG, "Pane search - path: " + path + ", found: " + found);
+              boolean found = path != null && path.equals(file.getAbsolutePath());
               return found;
             });
 
-    Pane currentPane = paneWindow.getSelectedPane(); // You might need to add this method
-    ILog.debug(
-        TAG, "Current selected pane: " + (currentPane != null ? currentPane.getTitle() : "null"));
     if (editorPane == null) {
-      String title = file.getName();
-      editorPane = new CodeEditorPane(requireContext(), title);
+      editorPane = new CodeEditorPane(requireContext(), file.getName());
       editorPane.setFile(file);
-      mainViewModel.requestCloseDrawer();
-      paneWindow.add(editorPane, /* select= */ true);
+      paneWindow.add(editorPane, true);
     } else {
-      ILog.debug(TAG, "Creating new CodeEditorPane");
-      mainViewModel.requestCloseDrawer();
       paneWindow.selectTab(editorPane);
     }
-
-    paneWindow.syncTabs();
-    // Verify selection worked
-    Pane newCurrentPane = paneWindow.getSelectedPane();
-    ILog.debug(
-        TAG, "New selected pane: " + (newCurrentPane != null ? newCurrentPane.getTitle() : "null"));
   }
 
   public void addWebViewPane(@NonNull File file) {
-    WebViewPane pane = paneWindow.findPane(WebViewPane.class);
-    Runnable action = null;
-
-    if (pane == null) {
-      String title = getString(R.string.webview_pane_title) + " | " + file.getName();
-      final WebViewPane finalPane = new WebViewPane(requireContext(), title);
-      action =
-          new Runnable() {
-            @Override
-            public void run() {
-              mainViewModel.requestCloseDrawer();
-              paneWindow.add(finalPane, false);
-            }
-          };
-      pane = finalPane;
+    WebViewPane existing = paneWindow.findPane(WebViewPane.class);
+    if (existing != null) {
+      existing.loadFile(file);
+      paneWindow.selectTab(existing);
+      return;
     }
-
-    pane.loadFile(file);
-    pane.setZoomable(true);
-    pane.enableDeskTopMode(false);
-    if (action != null) action.run();
-
-    mainViewModel.requestCloseDrawer();
-    paneWindow.selectTab(pane);
+    WebViewPane webViewPane = new WebViewPane(requireContext(), file.getName());
+    webViewPane.loadFile(file);
+    paneWindow.add(webViewPane, true);
   }
 
-  private void restoreViewState(int behaviorState) {
-    boolean isExpanded = behaviorState == BottomSheetBehavior.STATE_EXPANDED;
-    mainViewModel.setBottomSheetState(behaviorState);
-
-    Bundle floatOffset = new Bundle();
-    floatOffset.putFloat("offset", isExpanded ? 1f : 0f);
-    getChildFragmentManager().setFragmentResult(BuildActionFragment.OFFSET_KEY, floatOffset);
-  }
-
-  public String getUniqueName(@NonNull File currentFile) {
-    int sameFileNameCount = 0;
-    var builder = new UniqueNameBuilder<File>("","/");
-    
-    for (var pane : Objects.requireNonNull(paneWindow.getPanes())) {
-      if (pane instanceof CodeEditorPane editor) {
-        File openFile = editor.getFile();
-        if (openFile.getName().equals(currentFile.getName())) {
-          sameFileNameCount++;
-        }
-        builder.addPath(openFile, openFile.getPath());
+  private String getUniqueName(@NonNull File file) {
+    String root = lastOpenedProject != null ? lastOpenedProject.getAbsolutePath() : "";
+    UniqueNameBuilder<File> builder = new UniqueNameBuilder<>(root, File.separator);
+    for (Pane pane : paneWindow.getPanes()) {
+      if (pane instanceof CodeEditorPane cep && cep.getFile() != null) {
+        builder.addPath(cep.getFile(), cep.getFile().getAbsolutePath());
       }
     }
-
-    if (sameFileNameCount > 1) {
-      return builder.getShortPath(currentFile);
-    } else {
-      return currentFile.getName();
-    }
+    builder.addPath(file, file.getAbsolutePath());
+    return builder.getShortPath(file);
   }
 
-  public static BaseFragment newInstance() {
-    return new BaseFragment();
+  private void restoreViewState(int sheetBehaviour) {
+    mBehavior.setState(sheetBehaviour);
+    mOnBackPressedCallback.setEnabled(sheetBehaviour == BottomSheetBehavior.STATE_EXPANDED);
   }
 
   @Subscribe(threadMode = ThreadMode.MAIN)
   public void onEditorModificationEvent(EditorModificationEvent event) {
-    paneWindow.syncTabs();
+    if (paneWindow != null) {
+      paneWindow.syncTabs();
+    }
   }
 
   @Subscribe(threadMode = ThreadMode.MAIN)
-  public void onProjectChangeEvent(ProjectEvent event) {
-    final var currentProject = event.getFile();
-
+  public void onProjectEvent(ProjectEvent event) {
+    File currentProject = event.getFile();
     if (currentProject == null) {
-      lastOpenedProject = null;
       return;
     }
 
-    if (lastOpenedProject != null && lastOpenedProject.equals(currentProject)) {
-      ILog.debug(TAG, "Project already open");
-      return;
-    }
-
-    // Only close tabs if we're switching from one project to another
-    if (lastOpenedProject != null && paneWindow != null) {
-      paneWindow.closeAll(closeUnPinnedProjectPanes, pane -> !(pane instanceof WelcomePane));
+    if (lastOpenedProject != null
+        && !Objects.equals(lastOpenedProject.getAbsolutePath(), currentProject.getAbsolutePath())
+        && closeUnPinnedProjectPanes) {
+      paneWindow.closeAll(false, pane -> !(pane instanceof WelcomePane));
     }
 
     lastOpenedProject = currentProject;

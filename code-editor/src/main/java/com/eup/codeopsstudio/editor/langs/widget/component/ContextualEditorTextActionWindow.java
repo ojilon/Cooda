@@ -36,9 +36,11 @@ import androidx.appcompat.widget.TooltipCompat;
 
 import com.eup.codeopsstudio.editor.ContextualCodeEditor;
 import com.eup.codeopsstudio.editor.R;
+import com.eup.codeopsstudio.editor.databinding.ContextualTextComposePanelBinding;
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.elevation.SurfaceColors;
 
+import io.github.rosemoe.sora.event.EventReceiver;
 import io.github.rosemoe.sora.event.HandleStateChangeEvent;
 import io.github.rosemoe.sora.event.InterceptTarget;
 import io.github.rosemoe.sora.event.LongPressEvent;
@@ -54,7 +56,8 @@ import io.github.rosemoe.sora.widget.component.EditorTextActionWindow;
  *
  * @author Etido Peter
  */
-public class ContextualEditorTextActionWindow extends EditorTextActionWindow {
+public class ContextualEditorTextActionWindow extends EditorTextActionWindow
+    implements EventReceiver<SelectionChangeEvent> {
 
   private static final long DELAY = 200;
   private final ContextualCodeEditor editor; // was code editor
@@ -84,19 +87,19 @@ public class ContextualEditorTextActionWindow extends EditorTextActionWindow {
     this.editor = editor;
     handler = editor.getEventHandler();
 
-    // Since popup window does provide decor view, we have to pass null to this method
+    // Since popup window does not provide decor view, we have to pass null to this method
     @SuppressLint("InflateParams")
-    View root =
-        LayoutInflater.from(editor.getContext())
-            .inflate(R.layout.contextual_text_compose_panel, null);
+    ContextualTextComposePanelBinding panelBinding =
+        ContextualTextComposePanelBinding.inflate(LayoutInflater.from(editor.getContext()), null, false);
+    View root = panelBinding.getRoot();
 
-    pasteBtn = root.findViewById(R.id.panel_btn_paste);
-    copyBtn = root.findViewById(R.id.panel_btn_copy);
-    cutBtn = root.findViewById(R.id.panel_btn_cut);
-    selectAllBtn = root.findViewById(R.id.panel_btn_select_all);
-    longSelectBtn = root.findViewById(R.id.panel_btn_long_select);
-    expandSelectionBtn = root.findViewById(R.id.panel_btn_expand_selection);
-    formatBtn = root.findViewById(R.id.panel_btn_format);
+    pasteBtn = panelBinding.panelBtnPaste;
+    copyBtn = panelBinding.panelBtnCopy;
+    cutBtn = panelBinding.panelBtnCut;
+    selectAllBtn = panelBinding.panelBtnSelectAll;
+    longSelectBtn = panelBinding.panelBtnLongSelect;
+    expandSelectionBtn = panelBinding.panelBtnExpandSelection;
+    formatBtn = panelBinding.panelBtnFormat;
 
     pasteBtn.setOnClickListener(this);
     copyBtn.setOnClickListener(this);

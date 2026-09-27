@@ -90,3 +90,7 @@ google-services.json
 
 #gradle
 local.properties
+
+
+#error file
+error.md

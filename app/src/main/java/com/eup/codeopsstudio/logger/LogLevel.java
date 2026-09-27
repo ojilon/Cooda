@@ -52,6 +52,16 @@ public enum LogLevel {
   }
 
   /**
+   * Get the display string for the given log level.
+   *
+   * @param level the log level (may be null, yields null)
+   * @return the display string, or null if level is null
+   */
+  public static String getLevel(LogLevel level) {
+	return level == null ? null : level.getLevel();
+  }
+
+  /**
    * Look up a LogLevel by its display string.
    * <p>
    * Functional approach: returns the matching level or {@code null} if not found.

@@ -23,6 +23,7 @@
 
 package com.eup.codeopsstudio.util;
 
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ClipData;
@@ -46,6 +47,7 @@ import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.RotateAnimation;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -57,6 +59,8 @@ import androidx.core.app.ShareCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import com.eup.codeopsstudio.IdeApplication;
 import com.eup.codeopsstudio.R;
 import com.eup.codeopsstudio.common.AsyncTask;
@@ -324,7 +328,7 @@ public class BaseUtil {
     OnGlobalLayoutListener onGlobalLayoutListener =
         () -> {
           int height = getDecorViewInvisibleHeight(window);
-          if (!equal(decorViewInvisibleHeightPre[0], height)) {
+          if (decorViewInvisibleHeightPre[0] != height) {
             listener.onSoftInputChanged(height);
             decorViewInvisibleHeightPre[0] = height;
           }
@@ -368,6 +372,47 @@ public class BaseUtil {
         ctx.getString(R.string.share_app_info, appName, Constants.CHECK_UPDATE_GITHUB_URL));
     shareIntent.getIntent().addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     shareIntent.startChooser();
+  }
+
+  /**
+   * Show the soft input.
+   *
+   * @param view The view.
+   */
+  public static void showSoftInput(@NonNull final View view) {
+    showSoftInput(view, 0);
+  }
+
+  /**
+   * Show the soft input.
+   *
+   * @param view The view.
+   * @param flags Provides additional operating flags. Currently may be 0 or have the {@link
+   *     InputMethodManager#SHOW_IMPLICIT} bit set.
+   */
+  public static void showSoftInput(@NonNull final View view, final int flags) {
+    InputMethodManager imm =
+        (InputMethodManager)
+            IdeApplication.getInstance().getSystemService(Context.INPUT_METHOD_SERVICE);
+    if (imm == null) {
+      return;
+    }
+    view.setFocusable(true);
+    view.setFocusableInTouchMode(true);
+    view.requestFocus();
+    imm.showSoftInput(
+        view,
+        flags,
+        new ResultReceiver(new Handler()) {
+          @Override
+          protected void onReceiveResult(int resultCode, Bundle resultData) {
+            if (resultCode == InputMethodManager.RESULT_UNCHANGED_HIDDEN
+                || resultCode == InputMethodManager.RESULT_HIDDEN) {
+              toggleSoftInput();
+            }
+          }
+        });
+    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
   }
 
   /** Toggle the soft input display (show/hide keyboard). */

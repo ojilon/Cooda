@@ -54,6 +54,8 @@ import java.util.Objects;
 
 /**
  * Lifecycle observer to monitor file
+ * 
+ * delegates file pickers, folder pickers, createFile, save-as, permission launches to a lifecycle-aware helper. 
  *
  * @author Etido Peter
  */

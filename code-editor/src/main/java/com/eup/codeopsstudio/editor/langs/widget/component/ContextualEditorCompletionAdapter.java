@@ -27,12 +27,9 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 
-import com.eup.codeopsstudio.editor.R;
+import com.eup.codeopsstudio.editor.databinding.EditorCompletionResultItemBinding;
 import com.eup.codeopsstudio.editor.langs.completion.ContextualCompletionItem;
-import com.google.android.material.textview.MaterialTextView;
 
 import io.github.rosemoe.sora.lang.completion.CompletionItem;
 import io.github.rosemoe.sora.widget.component.EditorCompletionAdapter;
@@ -55,40 +52,36 @@ public final class ContextualEditorCompletionAdapter extends EditorCompletionAda
 
     @Override
     public View getView(int pos, View view, ViewGroup parent, boolean isCurrentCursorPosition) {
+        final EditorCompletionResultItemBinding binding;
         if (view == null) {
-            view = LayoutInflater.from(getContext())
-                                 .inflate(R.layout.editor_completion_result_item, parent, false);
+            binding = EditorCompletionResultItemBinding.inflate(
+                LayoutInflater.from(getContext()), parent, false);
+            view = binding.getRoot();
+            view.setTag(binding);
+        } else {
+            binding = (EditorCompletionResultItemBinding) view.getTag();
         }
         CompletionItem item = getItem(pos);
 
-        MaterialTextView tv = view.findViewById(R.id.result_item_label);
-        LinearLayout compHolder = view.findViewById(R.id.result_comp_desc_holder);
-
-        tv.setText(item.label);
-        tv = view.findViewById(R.id.result_item_desc);
-        tv.setText(item.desc);
+        binding.resultItemLabel.setText(item.label);
+        binding.resultItemDesc.setText(item.desc);
 
         if (item instanceof ContextualCompletionItem) {
             ContextualCompletionItem comp = (ContextualCompletionItem) getItem(pos);
             if (comp != null) {
-                tv = view.findViewById(R.id.result_item_comp_desc);
-                tv.setText(comp.compDescription);
-                compHolder.setVisibility(View.VISIBLE);
-            } else {
-                if (compHolder.getVisibility() == View.VISIBLE) {
-                    compHolder.setVisibility(View.GONE);
-                }
+                binding.resultItemCompDesc.setText(comp.compDescription);
+                binding.resultCompDescHolder.setVisibility(View.VISIBLE);
+            } else if (binding.resultCompDescHolder.getVisibility() == View.VISIBLE) {
+                binding.resultCompDescHolder.setVisibility(View.GONE);
             }
         }
 
-        view.setTag(pos);
         if (isCurrentCursorPosition) {
             view.setBackgroundColor(getThemeColor(EditorColorScheme.COMPLETION_WND_ITEM_CURRENT));
         } else {
             view.setBackgroundColor(0);
         }
-        ImageView iv = view.findViewById(R.id.result_item_image);
-        iv.setImageDrawable(item.icon);
+        binding.resultItemImage.setImageDrawable(item.icon);
         return view;
     }
 

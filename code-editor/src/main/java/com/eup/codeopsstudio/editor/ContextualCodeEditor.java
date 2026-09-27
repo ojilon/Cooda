@@ -90,6 +90,7 @@ public class ContextualCodeEditor extends CodeEditor
   private boolean autoCompleteWindowEnabled;
   private boolean isAutoCompleteSymbols;
   private boolean supportsULPFormatting;
+  private boolean basicDisplayMode;
 
   public ContextualCodeEditor(Context context) {
     this(context, null);
@@ -874,7 +875,7 @@ public class ContextualCodeEditor extends CodeEditor
 
   public void replaceSearch(String result) {
     try {
-      getSearcher().replaceThis(result);
+      getSearcher().replaceCurrentMatch(result);
     } catch (IllegalStateException e) {
       toast(e.getLocalizedMessage());
     }
@@ -901,6 +902,20 @@ public class ContextualCodeEditor extends CodeEditor
 
   public boolean supportsULPFormatting() {
     return this.supportsULPFormatting;
+  }
+
+  /**
+   * Lite ("smooth") rendering mode. Old sora-editor exposed this as {@code
+   * setBasicDisplayMode}; it was removed upstream, so the flag now maps to the
+   * closest current equivalent: disabling ligatures, a known rendering cost.
+   */
+  public void setBasicDisplayMode(boolean enabled) {
+    this.basicDisplayMode = enabled;
+    setLigatureEnabled(!enabled);
+  }
+
+  public boolean isBasicDisplayMode() {
+    return this.basicDisplayMode;
   }
 
   private class CaseHandler {

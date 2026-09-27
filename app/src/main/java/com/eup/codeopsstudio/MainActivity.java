@@ -1,4 +1,4 @@
-/* 
+/*
  * This file is part of CodeOps Studio (YourForkName).
  * Copyright (C) 2024-2026 Etido Peter
  * Copyright (C) 2026 Your Name <your.email@example.com>
@@ -12,6 +12,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see https://www.gnu.org/licenses/
+ *
+ * If you have more questions, feel free to message Etido Peter if you have any
+ * questions or need additional information. Email: euptron@gmail.com
  */
 
 package com.eup.codeopsstudio;
@@ -47,31 +53,31 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 /**
- * Primary container activity hosting either {@link MainFragment} for regular use or {@link
- * LandingFragment} for first-time onboarding.
- *
- * @author Etido Peter
+ * Primary container activity that hosts either MainFragment (regular IDE use) or LandingFragment
+ * (first-time onboarding). This is the root of the UI layer.
  */
 public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = MainActivity.class.getSimpleName();
 
-    private WindowProvider.Session session;
     private String sessionId;
-
     private MainViewModel mainViewModel;
     private Pane selectedPane;
+    private WindowProvider.Session session;
     private ContextualObserver lifecycleObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         BaseUtil.enforceEdgeToEdge(getWindow(), true);
         setContentView(binding.getRoot());
+
         initializeWindow();
 
-        mainViewModel     = new ViewModelProvider(this).get(MainViewModel.class);
+        mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
+
         lifecycleObserver = new ContextualObserver(this, getActivityResultRegistry(), this);
         getLifecycle().addObserver(lifecycleObserver);
 
@@ -86,38 +92,30 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        var refresh = refreshWindow(result -> {
+        boolean refresh = refreshWindow(result -> {
             ILog.debug(TAG, "invoke#onRefreshWindow:onResume" + result);
-            return true; // handled
+            return true;
         });
-
-        if (refresh) {
-            ILog.debug(TAG, "Window refresh successful");
-        } else {
-            ILog.debug(TAG, "Window refresh failed");
-        }
+        ILog.debug(TAG, refresh ? "Window refresh successful" : "Window refresh failed");
     }
 
     @Override
     public void onMultiWindowModeChanged(boolean isInMultiWindowMode,
-        @NonNull Configuration newConfig) {
+                                         @NonNull Configuration newConfig) {
         super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig);
-        var refresh = refreshWindow(result -> {
+        boolean refresh = refreshWindow(result -> {
             ILog.debug(TAG, "invoke#onRefreshWindow:onMultiWindowModeChanged" + result);
-            return true; // handled
+            return true;
         });
-
-        if (refresh) {
-            ILog.debug(TAG, "Window refresh successful");
-        } else {
-            ILog.debug(TAG, "Window refresh failed");
-        }
+        ILog.debug(TAG, refresh ? "Window refresh successful" : "Window refresh failed");
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        WindowProvider.Registry.unregister(sessionId);
+        if (sessionId != null) {
+            WindowProvider.Registry.unregister(sessionId);
+        }
     }
 
     @Override
@@ -169,20 +167,10 @@ public class MainActivity extends AppCompatActivity {
         return this.lifecycleObserver;
     }
 
-    /**
-     * Invokes a refresh of UI elements to keep shared data between windows in sync
-     * <p>Usage:
-     * Invoke on #create() or on
-     * <ul>{@link Activity#onResume()}</ul>
-     * <ul>{@link Activity#onCreate(Bundle)}</ul>
-     * <ul>{@link Activity#onMultiWindowModeChanged(boolean, Configuration)}</il>
-     *
-     * @param result the action to run
-     * @return {@code true} on refresh success otherwise {@code false}
-     */
     public boolean refreshWindow(@NonNull BooleanResult<Integer> result) {
         int totalWindows = WindowProvider.Registry.size();
-        ILog.debug(TAG, "Window " + session.getWindowCount() + " of " + totalWindows);
+        int thisWindow = (session != null) ? session.getWindowCount() : -1;
+        ILog.debug(TAG, "Window " + thisWindow + " of " + totalWindows);
         return result.process(totalWindows);
     }
 
@@ -191,11 +179,12 @@ public class MainActivity extends AppCompatActivity {
         if (sessionId == null) {
             sessionId = WindowProvider.Registry.generateSessionId();
         }
+
         session = WindowProvider.Registry.register(sessionId, selectedPane);
         session.setTaskId(getTaskId());
 
-        var label = getString(R.string.app_name);
-        var title = label + " #" + session.getWindowCount();
+        String label = getString(R.string.app_name);
+        String title = label + " #" + session.getWindowCount();
         ActivityManager.TaskDescription td;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

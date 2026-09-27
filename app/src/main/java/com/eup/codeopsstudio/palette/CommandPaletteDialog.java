@@ -46,6 +46,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.eup.codeopsstudio.common.util.TextWatcherAdapter;
+import com.eup.codeopsstudio.databinding.DialogCommandPaletteBinding;
 import com.eup.codeopsstudio.palette.registry.PaletteRegistry;
 import com.eup.codeopsstudio.util.BaseUtil;
 import com.eup.codeopsstudio.util.Wizard;
@@ -127,21 +128,30 @@ public class CommandPaletteDialog extends DialogFragment implements View.OnKeyLi
         }
     }
 
+    private DialogCommandPaletteBinding binding;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
         @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.dialog_command_palette, container, false);
+        binding = DialogCommandPaletteBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        etSearch     = view.findViewById(R.id.etSearch);
-        recyclerView = view.findViewById(R.id.recyclerView);
+        etSearch = binding.etSearch;
+        recyclerView = binding.recyclerView;
 
         registry = new PaletteRegistry(requireContext(), etSearch, getCodeEditorPane());
         configRecyclerView();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 
     @Override

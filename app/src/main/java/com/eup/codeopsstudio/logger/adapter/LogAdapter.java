@@ -26,9 +26,7 @@ package com.eup.codeopsstudio.logger.adapter;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -36,7 +34,7 @@ import androidx.recyclerview.widget.AsyncListDiffer;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import com.eup.codeopsstudio.logger.model.LogModel;
-import com.eup.codeopsstudio.R;
+import com.eup.codeopsstudio.databinding.ListItemLogBinding;
 import java.util.List;
 import java.util.Objects;
 
@@ -63,9 +61,9 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.ViewHolder> {
   @NonNull
   @Override
   public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-    View view =
-        LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_log, parent, false);
-    return new ViewHolder(view);
+    ListItemLogBinding binding =
+        ListItemLogBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+    return new ViewHolder(binding);
   }
 
   @Override
@@ -119,11 +117,11 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.ViewHolder> {
   }
 
   public static class ViewHolder extends RecyclerView.ViewHolder {
-    public TextView logMessageView;
+    public final TextView logMessageView;
 
-    public ViewHolder(@NonNull View itemView) {
-      super(itemView);
-      logMessageView = itemView.findViewById(R.id.logMessageView);
+    public ViewHolder(@NonNull ListItemLogBinding binding) {
+      super(binding.getRoot());
+      logMessageView = binding.logMessageView;
     }
   }
 }

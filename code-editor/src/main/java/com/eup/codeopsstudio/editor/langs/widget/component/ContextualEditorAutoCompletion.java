@@ -297,14 +297,6 @@ public class ContextualEditorAutoCompletion extends EditorAutoCompletion {
     }
 
     /**
-     * Reject the requests from IME to set composing region/text
-     */
-    @Override
-    public boolean shouldRejectComposing() {
-        return mCancelShowUp;
-    }
-
-    /**
      * Select current position
      *
      * @return if the action is performed
@@ -402,7 +394,7 @@ public class ContextualEditorAutoCompletion extends EditorAutoCompletion {
             if (newHeight == 0) {
                 hide();
             }
-            editor.updateCompletionWindowPosition();
+            updateCompletionWindowPosition();
             setSize(getWidth(), (int) Math.min(newHeight, mMaxHeight));
             if (!isShowing()) {
                 show();

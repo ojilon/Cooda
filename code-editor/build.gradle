@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 /*
  * This file is part of CodeOps Studio.
  * CodeOps Studio - Code anywhere anytime
@@ -59,7 +57,7 @@ android {
 }
 
 dependencies {
-    implementation libs.androidx.core.ktx
+    implementation(libs.androidx.core)
     implementation(libs.google.material)
     api(platform(libs.other.sora.editor.bom))
     api(libs.other.sora.editor.code)
@@ -67,10 +65,4 @@ dependencies {
     api(libs.other.sora.editor.textmate)
     implementation project(path: ":common")
     implementation project(path: ":shared-res")
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
-    }
 }
