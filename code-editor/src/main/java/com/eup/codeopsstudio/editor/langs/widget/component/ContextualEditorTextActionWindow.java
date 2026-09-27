@@ -40,6 +40,7 @@ import com.eup.codeopsstudio.editor.databinding.ContextualTextComposePanelBindin
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.elevation.SurfaceColors;
 
+import io.github.rosemoe.sora.event.EventReceiver;
 import io.github.rosemoe.sora.event.HandleStateChangeEvent;
 import io.github.rosemoe.sora.event.InterceptTarget;
 import io.github.rosemoe.sora.event.LongPressEvent;
@@ -55,7 +56,8 @@ import io.github.rosemoe.sora.widget.component.EditorTextActionWindow;
  *
  * @author Etido Peter
  */
-public class ContextualEditorTextActionWindow extends EditorTextActionWindow {
+public class ContextualEditorTextActionWindow extends EditorTextActionWindow
+    implements EventReceiver<SelectionChangeEvent> {
 
   private static final long DELAY = 200;
   private final ContextualCodeEditor editor; // was code editor

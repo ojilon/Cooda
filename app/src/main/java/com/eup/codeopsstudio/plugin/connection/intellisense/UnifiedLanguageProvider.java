@@ -16,22 +16,18 @@ import com.eup.codeopsstudio.plugin.PluginScanner;
 import com.eup.codeopsstudio.plugin.connection.lsp.LSPConnectionProvider;
 import io.github.rosemoe.sora.lang.Language;
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage;
-import io.github.rosemoe.sora.lsp.client.languageserver.requestmanager.DefaultRequestManager;
 import io.github.rosemoe.sora.lsp.client.languageserver.requestmanager.RequestManager;
 import io.github.rosemoe.sora.lsp.client.languageserver.serverdefinition.CustomLanguageServerDefinition;
 import io.github.rosemoe.sora.lsp.client.languageserver.serverdefinition.LanguageServerDefinition;
 import io.github.rosemoe.sora.lsp.client.languageserver.wrapper.EventHandler;
 import io.github.rosemoe.sora.lsp.editor.LspEditor;
-import io.github.rosemoe.sora.lsp.editor.LspEditorManager;
-import io.github.rosemoe.sora.lsp.operations.signature.SignatureHelpProvider;
-import io.github.rosemoe.sora.lsp.utils.URIUtils;
+import io.github.rosemoe.sora.lsp.editor.LspProject;
 import java.io.File;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.ServerCapabilities;
@@ -45,6 +41,7 @@ public class UnifiedLanguageProvider {
 
   private Logger logger;
   private LspEditor lspEditor;
+  private LspProject lspProject;
   private String languageExtension;
   private File workspaceFolder;
   private final PluginScanner pluginScanner;
@@ -83,7 +80,11 @@ public class UnifiedLanguageProvider {
   public void stop() {
     pluginScanner.detachAllPlugins();
     //if (!codeEditor.isReleased()) codeEditor.release();
-    LspEditorManager.closeAllManager();
+    if (lspProject != null) {
+      lspProject.dispose();
+      lspProject = null;
+    }
+    lspEditor = null;
     executorService.shutdownNow();
   }
 
@@ -117,8 +118,8 @@ public class UnifiedLanguageProvider {
       if (workspaceFolder == null) return;
 
       final String projectPath = workspaceFolder.getAbsolutePath();
-      final String fileUri = URIUtils.fileToURI(currentFile).toString();
-      final String projectUri = URIUtils.fileToURI(workspaceFolder).toString();
+      final String fileUri = currentFile.toURI().toString();
+      final String projectUri = workspaceFolder.toURI().toString();
 
       ILog.info(TAG, "Current File Uri:" + fileUri);
       ILog.info(TAG, "Project path: " + projectPath);
@@ -155,8 +156,11 @@ public class UnifiedLanguageProvider {
         AsyncTask.runOnUiThread(
             () -> {
               var serverDefinition = createLanguageServerDefinition(languageExtension, port);
-              LspEditorManager manager = LspEditorManager.getOrCreateEditorManager(projectPath);
-              lspEditor = manager.createEditor(fileUri, serverDefinition);
+              LspProject project = new LspProject(projectPath);
+              project.addServerDefinition(serverDefinition);
+              project.init();
+              lspProject = project;
+              lspEditor = project.getOrCreateEditor(currentFile.getAbsolutePath());
 
               lspEditor.setWrapperLanguage(configWrapperLanguage());
               lspEditor.setEditor(codeEditor);
@@ -169,12 +173,10 @@ public class UnifiedLanguageProvider {
           lock.wait();
         }
 
-        lspEditor.connectWithTimeout();
+        lspEditor.connectWithTimeoutBlocking();
         configLanguageServer(projectUri, port);
       } catch (InterruptedException e) {
         ILog.error(TAG, "Plugin connection Interrupted...", e);
-      } catch (TimeoutException te) {
-        ILog.error(TAG, "Plugin connection time out...", te);
       }
     } catch (Exception e) {
       AsyncTask.runOnUiThread(() -> logger.e(TAG, "Plugin connection failed " + e.getMessage(), e));
@@ -183,16 +185,16 @@ public class UnifiedLanguageProvider {
 
   private void configLanguageServer(String projectUri, int port) {
     try {
-      // remove unsupported server capabilities  to prevent the NPE crash.
-      var rm = (DefaultRequestManager) lspEditor.getRequestManager();
+      // disable unsupported server capabilities to prevent the NPE crash.
+      RequestManager rm = lspEditor.getRequestManager();
 
       if (rm != null) {
-        ServerCapabilities caps = rm.getServerCapabilities();
+        ServerCapabilities caps = rm.getCapabilities();
 
         if (caps != null) {
           if (caps.getSignatureHelpProvider() == null) {
-            lspEditor.getProviderManager().removeProvider(SignatureHelpProvider.class);
-            ILog.info(TAG, "SignatureHelpProvider removed because the server does not support it.");
+            lspEditor.setEnableSignatureHelp(false);
+            ILog.info(TAG, "SignatureHelp disabled because the server does not support it.");
           }
         }
       }

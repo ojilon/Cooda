@@ -577,13 +577,15 @@ public class BaseFragment extends Fragment
   }
 
   private String getUniqueName(@NonNull File file) {
-    UniqueNameBuilder<File> builder = new UniqueNameBuilder<>();
+    String root = lastOpenedProject != null ? lastOpenedProject.getAbsolutePath() : "";
+    UniqueNameBuilder<File> builder = new UniqueNameBuilder<>(root, File.separator);
     for (Pane pane : paneWindow.getPanes()) {
       if (pane instanceof CodeEditorPane cep && cep.getFile() != null) {
-        builder.addName(cep.getFile());
+        builder.addPath(cep.getFile(), cep.getFile().getAbsolutePath());
       }
     }
-    return builder.getUniqueName(file, file.getName());
+    builder.addPath(file, file.getAbsolutePath());
+    return builder.getShortPath(file);
   }
 
   private void restoreViewState(int sheetBehaviour) {
@@ -600,7 +602,7 @@ public class BaseFragment extends Fragment
 
   @Subscribe(threadMode = ThreadMode.MAIN)
   public void onProjectEvent(ProjectEvent event) {
-    File currentProject = event.getProjectDir();
+    File currentProject = event.getFile();
     if (currentProject == null) {
       return;
     }
@@ -608,7 +610,7 @@ public class BaseFragment extends Fragment
     if (lastOpenedProject != null
         && !Objects.equals(lastOpenedProject.getAbsolutePath(), currentProject.getAbsolutePath())
         && closeUnPinnedProjectPanes) {
-      paneWindow.closePanes(pane -> !(pane instanceof WelcomePane));
+      paneWindow.closeAll(false, pane -> !(pane instanceof WelcomePane));
     }
 
     lastOpenedProject = currentProject;

@@ -13,6 +13,7 @@ public class LSPConnectionProvider implements StreamConnectionProvider {
   private static final String DEFAULT_HOST = "127.0.0.1";
 
   private Socket socket;
+  private volatile boolean closed = true;
   private final Supplier<String> hostSupplier;
   private final Supplier<Integer> portSupplier;
   private final Supplier<Integer> timeoutSupplier;
@@ -59,6 +60,12 @@ public class LSPConnectionProvider implements StreamConnectionProvider {
     socket = new Socket();
     socket.connect(address, timeoutSupplier.get());
     socket.setSoTimeout(0); // infinite so timeout.
+    closed = false;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return closed || socket == null || socket.isClosed();
   }
 
   @Override
@@ -87,6 +94,8 @@ public class LSPConnectionProvider implements StreamConnectionProvider {
       socket.close();
     } catch (Exception e) {
       e.printStackTrace();
+    } finally {
+      closed = true;
     }
   }
 }

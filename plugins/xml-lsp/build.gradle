@@ -1,7 +1,5 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
-    id 'com.android.application'
+    alias(libs.plugins.android.application)
 }
 
 def secretsPropertiesFile = rootProject.file("secrets.properties")
@@ -86,16 +84,9 @@ dependencies {
     implementation project(path: ":modules:plugin-api:common")
     implementation project(path: ":modules:plugin-api:intellisense")
 
-    implementation libs.androidx.core.ktx
-    implementation libs.androidx.annotation
-    implementation libs.other.org.eclipse.lsp4j
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.annotation)
+    implementation(libs.other.org.eclipse.lsp4j)
     coreLibraryDesugaring(libs.other.desugar)
-    //noinspection UseTomlInstead --XML LSP
-    implementation 'org.eclipse.lemminx:org.eclipse.lemminx:0.30.0'
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
-    }
+    implementation(libs.other.lemminx)
 }

@@ -5,9 +5,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowInsets;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 import com.eup.codeopsstudio.MainActivity;
@@ -51,7 +51,7 @@ public class LandingFragment extends Fragment {
   @Override
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
-    int systemBars =WindowInsets.Type.systemBars();
+    int systemBars = WindowInsetsCompat.Type.systemBars();
     BaseUtil.applyWindowInsetToPadding(
         view, false, true, false, true, systemBars, false);
 

@@ -99,7 +99,7 @@ public class PrimarySideBarFragment extends Fragment {
 
   private void applySystemInsets(@NonNull View view) {
     int systemBars = WindowInsetsCompat.Type.systemBars();
-    BaseUtil.applyWindowInsetToPadding(view, false, true, false, true, systemBars);
+    BaseUtil.applyWindowInsetToPadding(view, false, true, false, true, systemBars, false);
   }
 
   /**

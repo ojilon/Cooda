@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.android.library)
     id 'maven-publish'
@@ -51,17 +49,12 @@ android {
 dependencies {
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.appcompat)
-    implementation libs.androidx.core.ktx
+    implementation(libs.androidx.core)
     implementation(libs.other.org.eclipse.lsp4j)
     implementation project(path: ":modules:plugin-api:common")
     coreLibraryDesugaring(libs.other.desugar)
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
-    }
-}
 
 afterEvaluate {
     publishing {

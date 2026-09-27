@@ -124,7 +124,7 @@ public final class PermissionCoordinator {
 
     public void requestStoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Wizard.requestStoragePermissionApi30(storageLauncherApi30);
+            Wizard.requestStoragePermissionApi30(host.requireContext(), storageLauncherApi30);
         } else {
             Wizard.requestStoragePermissionApi19(storageLauncherApi19);
         }

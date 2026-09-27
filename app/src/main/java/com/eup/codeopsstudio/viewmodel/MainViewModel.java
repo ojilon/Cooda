@@ -32,6 +32,16 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
+import com.eup.codeopsstudio.IdeApplication;
+import com.eup.codeopsstudio.R;
+import com.eup.codeopsstudio.common.models.Event;
+import com.eup.codeopsstudio.domain.events.PermissionEvent;
+import com.eup.codeopsstudio.logger.model.LogModel;
+import com.eup.codeopsstudio.models.ProgressModel;
+import com.eup.codeopsstudio.util.Wizard;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import java.io.File;
+import java.util.ArrayList;
 
 /**
  * View Model managing the central state for CodeOps Studio.
@@ -90,6 +100,21 @@ public class MainViewModel extends ViewModel {
   /** Observable permission event. */
   private final MutableLiveData<PermissionEvent> permissionEvent = new MutableLiveData<>();
 
+  /** Observable add-settings-pane request. */
+  private final MutableLiveData<Boolean> addSettingsPane = new MutableLiveData<>(false);
+
+  /** WebView pane file observable. */
+  private final MutableLiveData<File> mWebViewPaneFile = new MutableLiveData<>();
+
+  /** Tree-fragment view file observable. */
+  private final MutableLiveData<File> mTreeFragmentViewFile = new MutableLiveData<>();
+
+  /** Editor file-open observable. */
+  private final MutableLiveData<File> mOpenEditorFile = new MutableLiveData<>();
+
+  /** Zip-file picker observable. */
+  private final MutableLiveData<File> pickZipFile = new MutableLiveData<>();
+
   /**
    * Default constructor. Initializes the toolbar title from the application context.
    * <p>
@@ -139,8 +164,8 @@ public class MainViewModel extends ViewModel {
     return this.addPane;
   }
 
-  /** Get the BUILD logs observable (lazily initialized). */
-  public LiveData<ArrayList<LogModel>> getBUILDLogs() {
+  /** Get the BUILD logs observable (lazily initialized). Logger mutates it, so MutableLiveData. */
+  public MutableLiveData<ArrayList<LogModel>> getBUILDLogs() {
     if (mBUILDLogs == null) {
       mBUILDLogs = new MutableLiveData<>();
     }
@@ -210,8 +235,8 @@ public class MainViewModel extends ViewModel {
     return exitRequest;
   }
 
-  /** Get the IDE logs observable (lazily initialized). */
-  public LiveData<ArrayList<LogModel>> getIDELogs() {
+  /** Get the IDE logs observable (lazily initialized). Logger mutates it, so MutableLiveData. */
+  public MutableLiveData<ArrayList<LogModel>> getIDELogs() {
     if (mIDELogs == null) {
       mIDELogs = new MutableLiveData<>();
     }
@@ -370,7 +395,10 @@ public class MainViewModel extends ViewModel {
       return new Bundle();
     }
     Bundle bundle = new Bundle();
-    intent.extras().keySet().forEach(key -> bundle.putString(key, intent.getStringExtra(key)));
+    Bundle extras = intent.getExtras();
+    if (extras != null) {
+      extras.keySet().forEach(key -> bundle.putString(key, intent.getStringExtra(key)));
+    }
     return bundle;
   }
 

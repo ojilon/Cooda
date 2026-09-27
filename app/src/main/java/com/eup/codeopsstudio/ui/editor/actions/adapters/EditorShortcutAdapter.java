@@ -38,6 +38,7 @@ import com.eup.codeopsstudio.databinding.LayoutEditorShortcutItemBinding;
 import com.eup.codeopsstudio.editor.ContextualCodeEditor;
 import com.eup.codeopsstudio.util.BaseUtil;
 import com.eup.codeopsstudio.ui.editor.actions.models.EditorAction;
+import io.github.rosemoe.sora.widget.SelectionMovement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,22 +83,22 @@ public class EditorShortcutAdapter extends RecyclerView.Adapter<EditorShortcutAd
                 }
                 switch (name) {
                     case "MCL":
-                        editor.moveSelectionLeft();
+                        editor.moveSelection(SelectionMovement.LEFT);
                         break;
                     case "MCR":
-                        editor.moveSelectionRight();
+                        editor.moveSelection(SelectionMovement.RIGHT);
                         break;
                     case "MCU":
-                        editor.moveSelectionUp();
+                        editor.moveSelection(SelectionMovement.UP);
                         break;
                     case "MCD":
-                        editor.moveSelectionDown();
+                        editor.moveSelection(SelectionMovement.DOWN);
                         break;
                     case "home":
-                        editor.moveSelectionHome();
+                        editor.moveSelection(SelectionMovement.LINE_START);
                         break;
                     case "end":
-                        editor.moveSelectionEnd();
+                        editor.moveSelection(SelectionMovement.LINE_END);
                         break;
                 }
             }

@@ -23,113 +23,97 @@
 
 package com.eup.codeopsstudio.logger.model;
 
+import java.util.Objects;
+import java.util.UUID;
+
 /**
  * Immutable data model representing a single log entry.
  * <p>
- * This record holds all the essential properties of a log message:
- * icon, tag, log level, message, and timestamp.
- * <p>
- * Usage: Pass log parameters to the constructor or use the convenience
- * factory methods. The record is immutable and can be used directly
- * in functional pipelines, LiveData observations, or as a diff unit.
+ * Fields are {@link CharSequence} so both plain strings and styled
+ * (e.g. {@link android.text.SpannableString}) content are accepted.
  */
-public record LogModel(
+public final class LogModel {
 
-    /** Optional icon resource ID for diagnostics */
-    int mIcon,
+  private final int mIcon;
+  private final CharSequence mTag;
+  private final CharSequence mLevel;
+  private final CharSequence mDateFormat;
+  private final CharSequence mMessage;
+  private final UUID id = UUID.randomUUID();
 
-    /** Log tag (e.g., "MainActivity", "Network") */
-    String mTag,
+  /** Convenience constructor: basic log with just a message. */
+  public LogModel(CharSequence message) {
+    this(0, null, null, null, message);
+  }
 
-    /** Log level (e.g., "DEBUG", "ERROR") */
-    String mLevel,
+  /** Convenience constructor: diagnostics log with icon and message. */
+  public LogModel(int icon, CharSequence message) {
+    this(icon, null, null, null, message);
+  }
 
-    /** Date/time format string or null */
-    String mDateFormat,
+  /** Convenience constructor: log with tag and level. */
+  public LogModel(CharSequence tag, CharSequence level, CharSequence message) {
+    this(0, tag, level, null, message);
+  }
 
-    /** The actual log message */
-    String mMessage
+  /** Convenience constructor: log with date, tag, and level. */
+  public LogModel(CharSequence date, CharSequence tag, CharSequence level, CharSequence message) {
+    this(0, tag, level, date, message);
+  }
 
-) {
+  /** Full constructor: icon, tag, level, date, message. */
+  public LogModel(int icon, CharSequence tag, CharSequence level, CharSequence date,
+      CharSequence message) {
+    this.mIcon = icon;
+    this.mTag = tag;
+    this.mLevel = level == null ? "INFO" : level;
+    this.mDateFormat = date;
+    this.mMessage = message;
+  }
 
-    /** Generate a unique ID for this log entry. */
-    public UUID id() {
-        return UUID.randomUUID();
-    }
+  /** Get the log icon resource ID. */
+  public int getIcon() {
+    return mIcon;
+  }
 
-    /** Convenience constructor: basic log with just a message. */
-    public LogModel(String message) {
-        this(0, null, null, null, message);
-    }
+  /** Get the log tag. */
+  public CharSequence getTag() {
+    return mTag;
+  }
 
-    /** Convenience constructor: diagnostics log with icon and message. */
-    public LogModel(int icon, String message) {
-        this(icon, null, null, null, message);
-    }
+  /** Get the log level. */
+  public CharSequence getLevel() {
+    return mLevel;
+  }
 
-    /** Convenience constructor: log with tag and level. */
-    public LogModel(String tag, String level, String message) {
-        this(null, tag, level, null, message);
-    }
+  /** Get the date format. */
+  public CharSequence getDateFormat() {
+    return mDateFormat;
+  }
 
-    /** Convenience constructor: log with date, tag, and level. */
-    public LogModel(String date, String tag, String level, String message) {
-        this(date, 0, tag, level, message);
-    }
+  /** Get the log message. */
+  public CharSequence getMessage() {
+    return mMessage;
+  }
 
-    /** Convenience constructor: log with date, icon, tag, level, and message. */
-    public LogModel(
-        String date,
-        int icon,
-        String tag,
-        String level,
-        String message
-    ) {
-        mDateFormat = date;
-        mIcon = icon;
-        mTag = tag;
-        mLogLevel = level != null ? level : "INFO";
-        mMessage = message;
-    }
+  /** Get the stable unique ID of this log entry. */
+  public UUID getID() {
+    return id;
+  }
 
-    /** Get the log icon resource ID. */
-    public int icon() {
-        return mIcon;
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(mMessage, mTag, mDateFormat, mLevel);
+  }
 
-    /** Get the log tag. */
-    public String tag() {
-        return mTag;
-    }
-
-    /** Get the log level string. */
-    public String level() {
-        return mLevel;
-    }
-
-    /** Get the date format string. */
-    public String dateFormat() {
-        return mDateFormat;
-    }
-
-    /** Get the log message. */
-    public String message() {
-        return mMessage;
-    }
-
-    @Override
-    public int hashCode() {
-        return java.util.Objects.hash(mMessage, mTag, mDateFormat, mLevel);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        LogModel that = (LogModel) o;
-        return java.util.Objects.equals(mMessage, that.message())
-            && java.util.Objects.equals(mTag, that.tag())
-            && java.util.Objects.equals(mDateFormat, that.dateFormat())
-            && java.util.Objects.equals(mLevel, that.level());
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    LogModel that = (LogModel) o;
+    return Objects.equals(mMessage, that.mMessage)
+        && Objects.equals(mTag, that.mTag)
+        && Objects.equals(mDateFormat, that.mDateFormat)
+        && Objects.equals(mLevel, that.mLevel);
+  }
 }

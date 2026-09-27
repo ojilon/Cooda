@@ -17,7 +17,7 @@
         android:layout_width="@dimen/dimen24dp"
         android:layout_height="@dimen/dimen24dp"
         android:layout_centerVertical="true"
-        android:contentDescription="@string/project_icon_desc" -->
+        android:contentDescription="@string/project_icon_desc" />
 
     <!-- Container for project name and path text -->
     <LinearLayout

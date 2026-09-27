@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.android.library)
 }
@@ -26,17 +24,11 @@ android {
 
 dependencies {
     implementation libs.androidx.appcompat
-    implementation libs.androidx.core.ktx
+    implementation(libs.androidx.core)
     implementation libs.google.material
     testImplementation libs.other.junit
     androidTestImplementation libs.other.espresso.core
     androidTestImplementation libs.other.ext.junit
 
     implementation project(path: ":modules:plugin:sdk")
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
-    }
 }

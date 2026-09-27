@@ -43,7 +43,7 @@ import com.eup.codeopsstudio.plugin.PluginScanner;
 import com.eup.codeopsstudio.util.UninstallDialogFragment;
 import com.eup.codeopsstudio.util.Wizard;
 import com.google.android.material.chip.ChipGroup;
-import io.github.rosemoe.sora.util.ArrayList;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 

@@ -40,12 +40,17 @@ lsp4j = "0.21.1"
 androidGradlePlugin = "9.2.1"
 googleServicesPlugin = "4.4.4"
 firebaseCrashlyticsPlugin = "3.0.7"
-
-coreKtx = "1.18.0"
+# Java-only AndroidX (no Kotlin, so no core-ktx)
+androidxCore = "1.16.0"
+androidxRecyclerView = "1.4.0"
+lemminx = "0.30.0"
+soraEditor = "0.24.6"
 
 [libraries]
-# AndroidX (Java compatible)
+# AndroidX (Java compatible, no Kotlin)
+androidx-core = { group = "androidx.core", name = "core", version.ref = "androidxCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidxAppCompat" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "androidxRecyclerView" }
 androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "androidxAnnotation" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidxConstraintLayout" }
 androidx-navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "androidxNavigationFragment" }
@@ -80,11 +85,16 @@ other-eclipse-jgit = { group = "org.eclipse.jgit", name = "org.eclipse.jgit", ve
 other-eclipse-jgit-ssh-jsch = { group = "org.eclipse.jgit", name = "org.eclipse.jgit.ssh.jsch", version.ref = "jgit" }
 other-org-eclipse-lsp4j = { group = "org.eclipse.lsp4j", name = "org.eclipse.lsp4j", version.ref = "lsp4j" }
 other-greenrobot-eventbus = { group = "org.greenrobot", name = "eventbus", version.ref = "greenRobotEventBus" }
-other-commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
+
 other-mozilla-rhino = { group = "io.apisense", name = "rhino-android", version.ref = "mozilla" }
 other-desugar = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJDK" }
 other-nanohttpd = { group = "org.nanohttpd", name = "nanohttpd", version.ref = "nanohttpd" }
-# Note: leakcanary and sora-editor are Kotlin-based, removed for Java-only setup
+# sora-editor is Kotlin-written but consumed from Java (no Kotlin source in this repo)
+other-sora-editor-bom = { group = "io.github.rosemoe", name = "editor-bom", version.ref = "soraEditor" }
+other-sora-editor-code = { group = "io.github.rosemoe", name = "editor", version.ref = "soraEditor" }
+other-sora-editor-lsp = { group = "io.github.rosemoe", name = "editor-lsp", version.ref = "soraEditor" }
+other-sora-editor-textmate = { group = "io.github.rosemoe", name = "language-textmate", version.ref = "soraEditor" }
+other-lemminx = { group = "org.eclipse.lemminx", name = "org.eclipse.lemminx", version.ref = "lemminx" }
 other-commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
 # Glide (can be used in Java)
 other-glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
@@ -97,3 +107,4 @@ android-library = { id = "com.android.library", version.ref = "androidGradlePlug
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServicesPlugin" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
+oss-licenses = { id = "com.google.android.gms.oss-licenses-plugin", version.ref = "ossLicensesPlugin" }
